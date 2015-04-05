@@ -1,0 +1,572 @@
+# #-#-#-#-#  wesnoth-editor.cpp1.po (Battle for Wesnoth VERSION)  #-#-#-#-#
+# Korean translations for Battle for Wesnoth package.
+# Copyright (C) 2006 Wesnoth development team
+# This file is distributed under the same license as the Battle for Wesnoth package.
+# Automatically generated, 2006.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Battle for Wesnoth 1.1.1+dev\n"
+"Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
+"POT-Creation-Date: 2014-03-02 10:23+0100\n"
+"PO-Revision-Date: 2011-11-14 21:31+0900\n"
+"Last-Translator: mistzone <drier22@gmail.com>\n"
+"Language-Team: none\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. [brush]: id=brush-1
+#: data/core/editor/brushes.cfg:6
+msgid "Single Hex"
+msgstr "단일 칸"
+
+#. [brush]: id=brush-2
+#: data/core/editor/brushes.cfg:16
+msgid "Radius 1 Hex"
+msgstr "반경 1칸"
+
+#. [brush]: id=brush-3
+#: data/core/editor/brushes.cfg:26
+msgid "Radius 2 Hex"
+msgstr "반경 2칸"
+
+#. [brush]: id=brush-nw-se
+#: data/core/editor/brushes.cfg:47
+msgid "Hex Line NW-SE"
+msgstr "북서-남동 라인"
+
+#. [brush]: id=brush-sw-ne
+#: data/core/editor/brushes.cfg:63
+#, fuzzy
+#| msgid "Hex Line NW-SE"
+msgid "Hex Line SE-NW"
+msgstr "북서-남동 라인"
+
+#. [editor_group]: id=all
+#: data/core/editor/terrain-groups.cfg:11
+msgid "all"
+msgstr "모든 타일"
+
+#. [editor_group]: id=water
+#: data/core/editor/terrain-groups.cfg:17
+msgid "water"
+msgstr "수상 타일"
+
+#. [editor_group]: id=flat
+#: data/core/editor/terrain-groups.cfg:24
+msgid "flat"
+msgstr "평지 타일"
+
+#. [editor_group]: id=desert
+#: data/core/editor/terrain-groups.cfg:31
+msgid "desert"
+msgstr "사막 타일"
+
+#. [editor_group]: id=embellishments
+#: data/core/editor/terrain-groups.cfg:38
+msgid "embellishments"
+msgstr "타일 장식"
+
+#. [editor_group]: id=forest
+#: data/core/editor/terrain-groups.cfg:45
+msgid "forest"
+msgstr "삼림 타일"
+
+#. [editor_group]: id=fall
+#: data/core/editor/terrain-groups.cfg:52
+msgid "fall"
+msgstr ""
+
+#. [editor_group]: id=frozen
+#: data/core/editor/terrain-groups.cfg:59
+msgid "frozen"
+msgstr "냉동 타일"
+
+#. [editor_group]: id=rough
+#: data/core/editor/terrain-groups.cfg:66
+msgid "rough"
+msgstr "구릉 타일"
+
+#. [editor_group]: id=cave
+#: data/core/editor/terrain-groups.cfg:73
+msgid "cave"
+msgstr "동굴 타일"
+
+#. [editor_group]: id=obstacle
+#: data/core/editor/terrain-groups.cfg:80
+msgid "obstacle"
+msgstr "장애 타일"
+
+#. [editor_group]: id=village
+#: data/core/editor/terrain-groups.cfg:87
+msgid "village"
+msgstr "마을 타일"
+
+#. [editor_group]: id=castle
+#: data/core/editor/terrain-groups.cfg:94
+msgid "castle"
+msgstr "성채 타일"
+
+#. [editor_group]: id=bridge
+#: data/core/editor/terrain-groups.cfg:101
+msgid "bridge"
+msgstr "다리 타일"
+
+#. [editor_group]: id=special
+#: data/core/editor/terrain-groups.cfg:108
+msgid "special"
+msgstr "특수 타일"
+
+#. [editor_times]: id=empty
+#: data/core/editor/time-of-day.cfg:5
+msgid "None"
+msgstr ""
+
+#. [editor_times]: id=test
+#: data/core/editor/time-of-day.cfg:10
+msgid "Test"
+msgstr ""
+
+#. [editor_times]: id=default
+#: data/core/editor/time-of-day.cfg:21
+msgid "Default"
+msgstr ""
+
+#. [editor_times]: id=summer
+#: data/core/editor/time-of-day.cfg:27
+msgid "Summer"
+msgstr ""
+
+#. [editor_times]: id=winter
+#: data/core/editor/time-of-day.cfg:33
+msgid "Winter"
+msgstr ""
+
+#. [editor_times]: id=underground
+#: data/core/editor/time-of-day.cfg:39
+msgid "Underground"
+msgstr ""
+
+#. [editor_times]: id=deep_underground
+#: data/core/editor/time-of-day.cfg:45
+msgid "Deep Underground"
+msgstr ""
+
+#. [editor_times]: id=indoors
+#: data/core/editor/time-of-day.cfg:51
+msgid "Indoors"
+msgstr ""
+
+#. [editor_times]: id=24
+#: data/core/editor/time-of-day.cfg:57
+msgid "24 Hour Schedule"
+msgstr ""
+
+#. [editor_times]: id=after_the_fall
+#: data/core/editor/time-of-day.cfg:63
+msgid "After the Fall"
+msgstr ""
+
+#. [theme]: id=editor
+#: data/themes/editor.cfg:11
+#, fuzzy
+#| msgid "Quit Editor"
+msgid "theme^Editor"
+msgstr "에디터 종료"
+
+#. [menu]: id=menu-editor-file, type=turbo
+#: data/themes/editor.cfg:63
+msgid "File"
+msgstr "파일"
+
+#. [menu]: id=menu-editor-map
+#: data/themes/editor.cfg:84
+msgid "Map"
+msgstr ""
+
+#. [menu]: id=menu-editor-transitions
+#: data/themes/editor.cfg:92
+msgid "Transition Update"
+msgstr ""
+
+#. [menu]: id=menu-editor-window
+#: data/themes/editor.cfg:99
+msgid "Window"
+msgstr "창"
+
+#. [menu]: id=menu-editor-areas
+#: data/themes/editor.cfg:108
+msgid "Areas"
+msgstr ""
+
+#. [menu]: id=menu-editor-local-time
+#: data/themes/editor.cfg:116
+msgid "Assign Local Time"
+msgstr ""
+
+#. [menu]: id=menu-editor-local-schedule
+#: data/themes/editor.cfg:122
+msgid "Assign Local Time Schedule"
+msgstr ""
+
+#. [menu]: id=menu-editor-side
+#: data/themes/editor.cfg:130
+msgid "Side"
+msgstr ""
+
+#. [label]: id=villages-icon
+#: data/themes/editor.cfg:148
+msgid "villages"
+msgstr ""
+
+#. [label]: id=units-icon
+#: data/themes/editor.cfg:165
+msgid "units"
+msgstr ""
+
+#. [menu]: id=switch_time
+#: data/themes/editor.cfg:444
+msgid "Time Schedule Menu"
+msgstr ""
+
+#. [menu]: id=menu-playlist
+#: data/themes/editor.cfg:455
+msgid "Playlist"
+msgstr ""
+
+#. [menu]: id=menu-editor-schedule
+#: data/themes/editor.cfg:461
+msgid "Assign Time Schedule"
+msgstr ""
+
+#: src/editor/action/mouse/mouse_action_unit.cpp:58
+msgid "Identifier: "
+msgstr ""
+
+#: src/editor/action/mouse/mouse_action_unit.cpp:59
+msgid "Name: "
+msgstr ""
+
+#: src/editor/action/mouse/mouse_action_unit.cpp:60
+msgid "Type: "
+msgstr ""
+
+#: src/editor/action/mouse/mouse_action_unit.cpp:61
+msgid "Level: "
+msgstr ""
+
+#: src/editor/action/mouse/mouse_action_unit.cpp:62
+msgid "Cost: "
+msgstr ""
+
+#: src/editor/action/mouse/mouse_action_unit.cpp:63
+msgid "Recruit: "
+msgstr ""
+
+#: src/editor/editor_controller.cpp:177
+msgid "Fatal error"
+msgstr ""
+
+#: src/editor/editor_controller.cpp:205
+msgid "Do you really want to quit?"
+msgstr "정말로 종료하시겠습니까?"
+
+#: src/editor/editor_controller.cpp:207
+msgid ""
+"Do you really want to quit? Changes in the map since the last save will be "
+"lost."
+msgstr ""
+"정말로 종료하시겠습니까? 마지막 저장 이후에 행한 맵 변경사항을 잃게 됩니다."
+
+#: src/editor/editor_controller.cpp:209
+msgid ""
+"Do you really want to quit? The following maps were modified and all changes "
+"since the last save will be lost:"
+msgstr ""
+"정말로 종료하시겠습니까? 다음의 맵이 수정되어 있으며 종료하면 변경한 부분은 "
+"사라집니다:"
+
+#: src/editor/editor_controller.cpp:212
+msgid "Quit"
+msgstr ""
+
+#: src/editor/editor_controller.cpp:223
+msgid "No editor time-of-day found."
+msgstr ""
+
+#: src/editor/editor_controller.cpp:1070
+msgid "Change Unit ID"
+msgstr ""
+
+#: src/editor/editor_controller.cpp:1071
+msgid "ID:"
+msgstr ""
+
+#: src/editor/editor_controller.cpp:1087
+msgid "Rename Unit"
+msgstr ""
+
+#: src/editor/editor_controller.cpp:1088
+msgid "Name:"
+msgstr ""
+
+#: src/editor/map/context_manager.cpp:127
+#: src/editor/map/context_manager.cpp:288
+msgid "(New Map)"
+msgstr ""
+
+#: src/editor/map/context_manager.cpp:184
+#, fuzzy
+#| msgid "Choose a Map to Open"
+msgid "Choose a File to Open"
+msgstr "불러올 맵을 선택하십시오"
+
+#: src/editor/map/context_manager.cpp:290
+msgid "(New Scenario)"
+msgstr ""
+
+#: src/editor/map/context_manager.cpp:322
+msgid "(Unnamed Area)"
+msgstr ""
+
+#: src/editor/map/context_manager.cpp:345
+msgid "(New Side)"
+msgstr ""
+
+#: src/editor/map/context_manager.cpp:411
+#, fuzzy
+#| msgid "Choose a Map to Open"
+msgid "Choose a Mask to Apply"
+msgstr "불러올 맵을 선택하십시오"
+
+#: src/editor/map/context_manager.cpp:418
+msgid "Error loading mask"
+msgstr ""
+
+#: src/editor/map/context_manager.cpp:437
+msgid "Identifier:"
+msgstr ""
+
+#: src/editor/map/context_manager.cpp:437
+msgid "Rename Area"
+msgstr ""
+
+#: src/editor/map/context_manager.cpp:448
+#, fuzzy
+#| msgid "Choose a Map to Open"
+msgid "Choose Target Map"
+msgstr "불러올 맵을 선택하십시오"
+
+#: src/editor/map/context_manager.cpp:455
+#: src/editor/map/context_manager.cpp:887
+msgid "Error loading map"
+msgstr ""
+
+#: src/editor/map/context_manager.cpp:572
+msgid "Save the Map As"
+msgstr "저장할 곳을 선택하십시오"
+
+#: src/editor/map/context_manager.cpp:576
+#: src/editor/map/context_manager.cpp:604
+msgid "The file already exists. Do you want to overwrite it?"
+msgstr "파일이 이미 존재합니다. 덮어 씌우시겠습니까?"
+
+#: src/editor/map/context_manager.cpp:600
+#, fuzzy
+#| msgid "Save the Map As"
+msgid "Save the Scenario As"
+msgstr "저장할 곳을 선택하십시오"
+
+#: src/editor/map/context_manager.cpp:639
+msgid "No random map generators found."
+msgstr ""
+
+#: src/editor/map/context_manager.cpp:652
+#: src/editor/map/context_manager.cpp:656
+msgid "Map creation failed."
+msgstr ""
+
+#: src/editor/map/context_manager.cpp:668
+msgid "Unsaved Changes"
+msgstr ""
+
+#: src/editor/map/context_manager.cpp:669
+#, fuzzy
+#| msgid ""
+#| "Do you really want to quit? Changes in the map since the last save will "
+#| "be lost."
+msgid ""
+"Do you want to discard all changes you made to the map since the last save?"
+msgstr ""
+"정말로 종료하시겠습니까? 마지막 저장 이후에 행한 맵 변경사항을 잃게 됩니다."
+
+#: src/editor/map/context_manager.cpp:766
+#, fuzzy
+#| msgid "This map is already open."
+msgid "This scenario is already open."
+msgstr "해당 맵은 이미 열려 있습니다."
+
+#: src/editor/map/context_manager.cpp:788
+#: src/editor/map/context_manager.cpp:843
+msgid "This map is already open."
+msgstr "해당 맵은 이미 열려 있습니다."
+
+#: src/editor/map/context_manager.cpp:809
+#, fuzzy
+#| msgid "Map saved."
+msgid "Scenario saved."
+msgstr "맵이 저장되었습니다."
+
+#: src/editor/map/context_manager.cpp:823
+msgid "Map saved."
+msgstr "맵이 저장되었습니다."
+
+#: src/editor/map/context_manager.cpp:866
+msgid "Loaded embedded map data"
+msgstr ""
+
+#: src/editor/map/context_manager.cpp:867
+#: src/editor/map/context_manager.cpp:881
+msgid "Map loaded from scenario"
+msgstr ""
+
+#: src/editor/map/context_manager.cpp:877
+msgid ""
+"Loaded referenced map file:\n"
+"$new"
+msgstr ""
+
+#: src/editor/map/editor_map.cpp:149
+msgid "Player"
+msgstr "플레이어"
+
+#: src/editor/map/editor_map.cpp:266
+msgid "The size of the target map is different from the current map"
+msgstr ""
+
+#: src/editor/map/map_context.cpp:127
+msgid "File not found"
+msgstr ""
+
+#: src/editor/map/map_context.cpp:133
+msgid "Empty file"
+msgstr ""
+
+#: src/editor/map/map_context.cpp:175
+msgid ""
+"The map file looks like a scenario, but the map_data value does not point to "
+"an existing file"
+msgstr ""
+
+#: src/editor/map/map_context.cpp:508
+#, fuzzy
+#| msgid "Could not save the map: $msg"
+msgid "Could not save the scenario: $msg"
+msgstr "맵을 저장 할 수 없습니다: $msg"
+
+#: src/editor/map/map_context.cpp:535
+msgid "Could not save into scenario"
+msgstr ""
+
+#: src/editor/map/map_context.cpp:542
+msgid "Could not save the map: $msg"
+msgstr "맵을 저장 할 수 없습니다: $msg"
+
+#: src/editor/palette/editor_palettes.cpp:59
+#: src/editor/palette/editor_palettes.cpp:114
+msgid "(Unknown Group)"
+msgstr ""
+
+#: src/editor/palette/editor_palettes.cpp:383
+msgid "(non-core)"
+msgstr ""
+
+#: src/editor/palette/editor_palettes.cpp:384
+msgid "Will not work in game without extra care."
+msgstr ""
+
+#: src/editor/palette/terrain_palettes.cpp:223
+msgid "FG: "
+msgstr ""
+
+#: src/editor/palette/terrain_palettes.cpp:224
+msgid "BG: "
+msgstr ""
+
+#: src/gui/dialogs/editor/custom_tod.cpp:129
+msgid "Choose File"
+msgstr ""
+
+#: src/gui/dialogs/editor_set_starting_position.cpp:87
+msgid "player^None"
+msgstr "선택 해제"
+
+#: src/gui/dialogs/editor_set_starting_position.cpp:100
+msgid "Player $player_number"
+msgstr "$player_number 번 플레이어"
+
+#~ msgid "Edit"
+#~ msgstr "수정"
+
+#~ msgid "Undo"
+#~ msgstr "물리기"
+
+#~ msgid "Can’t Undo"
+#~ msgstr "물리기 불가"
+
+#~ msgid "Redo"
+#~ msgstr "재실행"
+
+#~ msgid "Can’t Redo"
+#~ msgstr "재실행 불가"
+
+#~ msgid "Settings"
+#~ msgstr "설정"
+
+#~ msgid "Draw tiles"
+#~ msgstr "타일 그리기"
+
+#~ msgid "Fill"
+#~ msgstr "채우기"
+
+#~ msgid "Set player's starting position"
+#~ msgstr "플레이어 시작 지점 표시"
+
+#~ msgid "Zoom in"
+#~ msgstr "화면 확대"
+
+#~ msgid "Zoom out"
+#~ msgstr "화면 축소"
+
+#~ msgid "Zoom to default view"
+#~ msgstr "초기 화면"
+
+#~ msgid "Toggle grid"
+#~ msgstr "격자 표시"
+
+#~ msgid "Resize the map"
+#~ msgstr "맵 크기 설정"
+
+#~ msgid "Flip map"
+#~ msgstr "맵 뒤집기"
+
+#~ msgid "Language"
+#~ msgstr "언어"
+
+#~ msgid "Choose your preferred language:"
+#~ msgstr "원하시는 언어를 선택하십시오:"
+
+#~ msgid "Battle for Wesnoth Map Editor"
+#~ msgstr "Battle for Wesnoth Map Editor"
+
+#~ msgid "Which player should start here?"
+#~ msgstr "어떤 플레이어가 이 곳에서 시작합니까?"
+
+#~ msgid "Do you want to save the map before quitting?"
+#~ msgstr "나가기 전에 맵을 저장하시겠습니까?"
+
+#~ msgid "Error: Illegal character in filename."
+#~ msgstr "에러: "
