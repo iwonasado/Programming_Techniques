@@ -26,3 +26,24 @@
 *.exe
 *.out
 *.app
+
+# After Compiling Files
+.scons-option-cache
+build/
+scons/boost.pyc
+scons/config_check_utils.pyc
+scons/cplusplus.pyc
+scons/cross_compile.pyc
+scons/gettext.pyc
+scons/install.pyc
+scons/lua.pyc
+scons/metasconf.pyc
+scons/pango.pyc
+scons/pkgconfig.pyc
+scons/python_devel.pyc
+scons/scanreplace.pyc
+scons/sdl.pyc
+translations/
+wesnoth
+wesnothd
+
