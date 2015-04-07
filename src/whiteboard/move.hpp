@@ -24,110 +24,111 @@
 
 struct temporary_unit_mover;
 
-namespace wb {
-
-/**
- * A planned move, represented on the map by an arrow and
- * a ghosted unit in the destination hex.
- */
-class move : public action
-{
-public:
-	move(size_t team_index, bool hidden, unit& mover, const pathfind::marked_route& route,
-			arrow_ptr arrow, fake_unit_ptr fake_unit);
-	move(config const&, bool hidden); // For deserialization
-	virtual ~move();
-
-	virtual std::ostream& print(std::ostream& s) const;
-
-	virtual void accept(visitor& v);
-
-	virtual void execute(bool& success, bool& complete);
+	namespace wb {
 
 	/**
-	 * Check the validity of the action.
-	 *
-	 * @return the error preventing the action from being executed.
-	 * @retval OK if there isn't any error (the action can be executed.)
+	 * A planned move, represented on the map by an arrow and
+	 * a ghosted unit in the destination hex.
 	 */
-	virtual error check_validity() const;
+	class move : public action
+	{
+	public:
+		move(size_t team_index, bool hidden, unit& mover, const pathfind::marked_route& route,
+				arrow_ptr arrow, fake_unit_ptr fake_unit);
+		move(config const&, bool hidden); // For deserialization
+		virtual ~move();
 
-	/** Return the unit targeted by this action. Null if unit doesn't exist. */
-	virtual unit_ptr get_unit() const;
-	/** @return pointer to the fake unit used only for visuals */
-	virtual fake_unit_ptr get_fake_unit() { return fake_unit_; }
+		virtual std::ostream& print(std::ostream& s) const;
 
-	virtual map_location get_source_hex() const;
-	virtual map_location get_dest_hex() const;
+		virtual void accept(visitor& v);
 
-	virtual void set_route(const pathfind::marked_route& route);
-	virtual const pathfind::marked_route& get_route() const { assert(route_); return *route_; }
-	/// attempts to pathfind a new marked route for this path between these two hexes;
-	/// returns true and assigns it to the internal route if successful.
-	virtual bool calculate_new_route(const map_location& source_hex, const map_location& dest_hex);
+		virtual void execute(bool& success, bool& complete);
 
-	virtual arrow_ptr get_arrow() { return arrow_; }
+		/**
+		 * Check the validity of the action.
+		 *
+		 * @return the error preventing the action from being executed.
+		 * @retval OK if there isn't any error (the action can be executed.)
+		 */
+		virtual error check_validity() const;
 
-	/** Applies temporarily the result of this action to the specified unit map. */
-	virtual void apply_temp_modifier(unit_map& unit_map);
-	/** Removes the result of this action from the specified unit map. */
-	virtual void remove_temp_modifier(unit_map& unit_map);
+		/** Return the unit targeted by this action. Null if unit doesn't exist. */
+		virtual unit_ptr get_unit() const;
+		/** @return pointer to the fake unit used only for visuals */
+		virtual fake_unit_ptr get_fake_unit() { return fake_unit_; }
 
-	/** Gets called by display when drawing a hex, to allow actions to draw to the screen. */
-	virtual void draw_hex(map_location const& hex);
-	/** Redrawing function, called each time the action situation might have changed. */
-	void redraw();
+		virtual map_location get_source_hex() const;
+		virtual map_location get_dest_hex() const;
 
-	/** Assigns a turn number to display to this planned move. Assigning zero removes any turn number. */
-	virtual void set_turn_number(int turn) { turn_number_ = turn; }
+		virtual void set_route(const pathfind::marked_route& route);
+		virtual const pathfind::marked_route& get_route() const { assert(route_); return *route_; }
+		/// attempts to pathfind a new marked route for this path between these two hexes;
+		/// returns true and assigns it to the internal route if successful.
+		virtual bool calculate_new_route(const map_location& source_hex, const map_location& dest_hex);
 
-	virtual map_location get_numbering_hex() const;
+		virtual arrow_ptr get_arrow() { return arrow_; }
 
-	virtual config to_config() const;
+		/** Applies temporarily the result of this action to the specified unit map. */
+		virtual void apply_temp_modifier(unit_map& unit_map);
+		/** Removes the result of this action from the specified unit map. */
+		virtual void remove_temp_modifier(unit_map& unit_map);
 
-	///@todo Make use of safe_enum idiom?
-	enum ARROW_BRIGHTNESS {ARROW_BRIGHTNESS_STANDARD, ARROW_BRIGHTNESS_HIGHLIGHTED, ARROW_BRIGHTNESS_FOCUS};
-	void set_arrow_brightness(ARROW_BRIGHTNESS x) const {arrow_brightness_=x; }
-	enum ARROW_TEXTURE {ARROW_TEXTURE_VALID, ARROW_TEXTURE_INVALID};
-	void set_arrow_texture(ARROW_TEXTURE x) const {arrow_texture_=x; }
+		/** Gets called by display when drawing a hex, to allow actions to draw to the screen. */
+		virtual void draw_hex(map_location const& hex);
+		/** Redrawing function, called each time the action situation might have changed. */
+		void redraw();
 
-protected:
+		/** Assigns a turn number to display to this planned move. Assigning zero removes any turn number. */
+		virtual void set_turn_number(int turn) { turn_number_ = turn; }
 
-	boost::shared_ptr<move> shared_from_this() {
-		return boost::static_pointer_cast<move>(action::shared_from_this());
-	}
+		virtual map_location get_numbering_hex() const;
 
-	void calculate_move_cost();
+		virtual config to_config() const;
 
-	size_t unit_underlying_id_;
-	std::string unit_id_;
-	boost::scoped_ptr<pathfind::marked_route> route_;
-	int movement_cost_;
-	/// Turn end number to draw if greater than zero. Assigned by the map builder.
-	int turn_number_;
+		///@todo Make use of safe_enum idiom?
+		enum ARROW_BRIGHTNESS {ARROW_BRIGHTNESS_STANDARD, ARROW_BRIGHTNESS_HIGHLIGHTED, ARROW_BRIGHTNESS_FOCUS};
+		void set_arrow_brightness(ARROW_BRIGHTNESS x) const {arrow_brightness_=x; }
+		enum ARROW_TEXTURE {ARROW_TEXTURE_VALID, ARROW_TEXTURE_INVALID};
+		void set_arrow_texture(ARROW_TEXTURE x) const {arrow_texture_=x; }
 
-	arrow_ptr arrow_;
-	fake_unit_ptr fake_unit_;
+	protected:
 
-	mutable ARROW_BRIGHTNESS arrow_brightness_;
-	mutable ARROW_TEXTURE arrow_texture_;
+		boost::shared_ptr<move> shared_from_this() 
+		{
+			return boost::static_pointer_cast<move>(action::shared_from_this());
+		}
 
-private:
-	virtual void do_hide();
-	virtual void do_show();
+		void calculate_move_cost();
 
-	void hide_fake_unit();
-	void show_fake_unit();
+		size_t unit_underlying_id_;
+		std::string unit_id_;
+		boost::scoped_ptr<pathfind::marked_route> route_;
+		int movement_cost_;
+		/// Turn end number to draw if greater than zero. Assigned by the map builder.
+		int turn_number_;
 
-	void init();
-	void update_arrow_style();
-	boost::scoped_ptr<temporary_unit_mover> mover_;
-	bool fake_unit_hidden_;
-};
+		arrow_ptr arrow_;
+		fake_unit_ptr fake_unit_;
 
-/** Dumps an move on a stream, for debug purposes. */
-std::ostream &operator<<(std::ostream &s, move_ptr move);
-std::ostream &operator<<(std::ostream &s, move_const_ptr move);
+		mutable ARROW_BRIGHTNESS arrow_brightness_;
+		mutable ARROW_TEXTURE arrow_texture_;
+
+	private:
+		virtual void do_hide();
+		virtual void do_show();
+
+		void hide_fake_unit();
+		void show_fake_unit();
+
+		void init();
+		void update_arrow_style();
+		boost::scoped_ptr<temporary_unit_mover> mover_;
+		bool fake_unit_hidden_;
+	};
+
+	/** Dumps an move on a stream, for debug purposes. */
+	std::ostream &operator<<(std::ostream &s, move_ptr move);
+	std::ostream &operator<<(std::ostream &s, move_const_ptr move);
 
 } // end namespace wb
 
