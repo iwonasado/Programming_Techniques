@@ -56,42 +56,43 @@
 
 #include <sstream>
 
-namespace wb {
+namespace wb 
+{
 
-manager::manager():
-		active_(false),
-		inverted_behavior_(false),
-		self_activate_once_(true),
-#if 0
+	manager::manager ():
+		active_ (false),
+		inverted_behavior_ (false),
+		self_activate_once_ (true),
+	#if 0
 		print_help_once_(true),
-#endif
-		wait_for_side_init_(true),
-		planned_unit_map_active_(false),
-		executing_actions_(false),
-		executing_all_actions_(false),
-		preparing_to_end_turn_(false),
-		gamestate_mutated_(false),
-		activation_state_lock_(new bool),
-		unit_map_lock_(new bool),
-		mapbuilder_(),
-		highlighter_(),
-		route_(),
-		move_arrows_(),
-		fake_units_(),
-		temp_move_unit_underlying_id_(0),
-		key_poller_(new CKey),
-		hidden_unit_hexes_(),
-		net_buffer_(resources::teams->size()),
-		team_plans_hidden_(resources::teams->size(),preferences::hide_whiteboard()),
-		units_owning_moves_()
-{
-	LOG_WB << "Manager initialized.\n";
-}
+	#endif
+		wait_for_side_init_ (true),
+		planned_unit_map_active_ (false),
+		executing_actions_ (false),
+		executing_all_actions_ (false),
+		preparing_to_end_turn_ (false),
+		gamestate_mutated_ (false),
+		activation_state_lock_ (new bool),
+		unit_map_lock_ (new bool),
+		mapbuilder_ (),
+		highlighter_ (),
+		route_ (),
+		move_arrows_ (),
+		fake_units_ (),
+		temp_move_unit_underlying_id_ (0),
+		key_poller_ (new CKey),
+		hidden_unit_hexes_ (),
+		net_buffer_ (resources::teams -> size ()),
+		team_plans_hidden_ (resources::teams -> size (), preferences::hide_whiteboard ()),
+		units_owning_moves_ ()
+	{
+		LOG_WB << "Manager initialized.\n";
+	}
 
-manager::~manager()
-{
-	LOG_WB << "Manager destroyed.\n";
-}
+	manager::~manager ()
+	{
+		LOG_WB << "Manager destroyed.\n";
+	}
 
 //Used for chat-spamming debug info
 #if 0
@@ -102,194 +103,205 @@ static void print_to_chat(const std::string& title, const std::string& message)
 }
 #endif
 
-void manager::print_help_once()
-{
-#if 0
-	if (!print_help_once_)
-		return;
-	else
-		print_help_once_ = false;
+	void manager::print_help_once ()
+	{
+	#if 0
+		if (!print_help_once_)
+			return;
+		else
+			print_help_once_ = false;
 
-	print_to_chat("whiteboard", std::string("Type :wb to activate/deactivate planning mode.")
-		+ "  Hold TAB to temporarily deactivate/activate it.");
-	std::stringstream hotkeys;
-	const hotkey::hotkey_item& hk_execute = hotkey::get_hotkey(hotkey::HOTKEY_WB_EXECUTE_ACTION);
-	if(!hk_execute.null()) {
-		//print_to_chat("[execute action]", "'" + hk_execute.get_name() + "'");
-		hotkeys << "Execute: " << hk_execute.get_name() << ", ";
+		print_to_chat ("whiteboard", std::string ("Type :wb to activate/deactivate planning mode.")
+			+ "  Hold TAB to temporarily deactivate/activate it.");
+		std::stringstream hotkeys;
+		const hotkey::hotkey_item& hk_execute = hotkey::get_hotkey (hotkey::HOTKEY_WB_EXECUTE_ACTION);
+		if (!hk_execute.null ()) 
+		{
+			//print_to_chat ("[execute action]", "'" + hk_execute.get_name () + "'");
+			hotkeys << "Execute: " << hk_execute.get_name () << ", ";
+		}
+		const hotkey::hotkey_item& hk_execute_all = hotkey::get_hotkey (hotkey::HOTKEY_WB_EXECUTE_ALL_ACTIONS);
+		if (!hk_execute_all.null ()) 
+		{
+			//print_to_chat ("[execute action]", "'" + hk_execute_all.get_name () + "'");
+			hotkeys << "Execute all: " << hk_execute_all.get_name () << ", ";
+		}
+		const hotkey::hotkey_item& hk_delete = hotkey::get_hotkey (hotkey::HOTKEY_WB_DELETE_ACTION);
+		if (!hk_delete.null ()) 
+		{
+			//print_to_chat ("[delete action]", "'" + hk_delete.get_name () + "'");
+			hotkeys << "Delete: " << hk_delete.get_name () << ", ";
+		}
+		const hotkey::hotkey_item& hk_bump_up = hotkey::get_hotkey (hotkey::HOTKEY_WB_BUMP_UP_ACTION);
+		if (!hk_bump_up.null ()) 
+		{
+			//print_to_chat ("[move action earlier in queue]", "'" + hk_bump_up.get_name () + "'");
+			hotkeys << "Move earlier: " << hk_bump_up.get_name () << ", ";
+		}
+		const hotkey::hotkey_item& hk_bump_down = hotkey::get_hotkey (hotkey::HOTKEY_WB_BUMP_DOWN_ACTION);
+		if (!hk_bump_down.null ()) 
+		{
+			//print_to_chat ("[move action later in queue]", "'" + hk_bump_down.get_name () + "'");
+			hotkeys << "Move later: " << hk_bump_down.get_name () << ", ";
+		}
+		print_to_chat ("HOTKEYS:", hotkeys.str () + "\n");
+	#endif
 	}
-	const hotkey::hotkey_item& hk_execute_all = hotkey::get_hotkey(hotkey::HOTKEY_WB_EXECUTE_ALL_ACTIONS);
-	if(!hk_execute_all.null()) {
-		//print_to_chat("[execute action]", "'" + hk_execute_all.get_name() + "'");
-		hotkeys << "Execute all: " << hk_execute_all.get_name() << ", ";
-	}
-	const hotkey::hotkey_item& hk_delete = hotkey::get_hotkey(hotkey::HOTKEY_WB_DELETE_ACTION);
-	if(!hk_delete.null()) {
-		//print_to_chat("[delete action]", "'" + hk_delete.get_name() + "'");
-		hotkeys << "Delete: " << hk_delete.get_name() << ", ";
-	}
-	const hotkey::hotkey_item& hk_bump_up = hotkey::get_hotkey(hotkey::HOTKEY_WB_BUMP_UP_ACTION);
-	if(!hk_bump_up.null()) {
-		//print_to_chat("[move action earlier in queue]", "'" + hk_bump_up.get_name() + "'");
-		hotkeys << "Move earlier: " << hk_bump_up.get_name() << ", ";
-	}
-	const hotkey::hotkey_item& hk_bump_down = hotkey::get_hotkey(hotkey::HOTKEY_WB_BUMP_DOWN_ACTION);
-	if(!hk_bump_down.null()) {
-		//print_to_chat("[move action later in queue]", "'" + hk_bump_down.get_name() + "'");
-		hotkeys << "Move later: " << hk_bump_down.get_name() << ", ";
-	}
-	print_to_chat("HOTKEYS:", hotkeys.str() + "\n");
-#endif
-}
 
-bool manager::can_modify_game_state() const
-{
-	if(wait_for_side_init_
+	bool manager::can_modify_game_state () const
+	{
+		if (wait_for_side_init_
 					|| resources::teams == NULL
 					|| executing_actions_
-					|| resources::gameboard->is_observer()
-					|| resources::controller->is_linger_mode())
-	{
-		return false;
+					|| resources::gameboard->is_observer ()
+					|| resources::controller->is_linger_mode ()) {
+			return false;
+		} else {
+			return true;
+		}
 	}
-	else
+
+	bool manager::can_activate () const
 	{
-		return true;
+		//any more than one reference means a lock on whiteboard state was requested
+		if (!activation_state_lock_.unique ()) {
+			return false;
+		}
+
+		return can_modify_game_state ();
 	}
-}
 
-bool manager::can_activate() const
-{
-	//any more than one reference means a lock on whiteboard state was requested
-	if(!activation_state_lock_.unique())
-		return false;
-
-	return can_modify_game_state();
-}
-
-void manager::set_active(bool active)
-{
-	if(!can_activate())
+	void manager::set_active (bool active)
 	{
+		if (!can_activate ())
+		{
 		active_ = false;
 		LOG_WB << "Whiteboard can't be activated now.\n";
-	}
-	else if (active != active_)
-	{
-		active_ = active;
-		erase_temp_move();
-
-		if (active_)
-		{
-			if(should_clear_undo())
-				resources::undo_stack->clear();
-			validate_viewer_actions();
-			LOG_WB << "Whiteboard activated! " << *viewer_actions() << "\n";
-			create_temp_move();
 		} else {
-			LOG_WB << "Whiteboard deactivated!\n";
+			if (active != active_)
+			{
+				active_ = active;
+				erase_temp_move ();
+
+				if (active_)
+				{
+					if (should_clear_undo ())
+					{
+						resources::undo_stack -> clear ();
+					}
+					validate_viewer_actions ();
+					LOG_WB << "Whiteboard activated! " << *viewer_actions () << "\n";
+					create_temp_move ();
+				} else {
+					LOG_WB << "Whiteboard deactivated!\n";
+				}
+			}
+		}	
+	}
+
+	void manager::set_invert_behavior (bool invert)
+	{
+		//any more than one reference means a lock on whiteboard state was requested
+		if (!activation_state_lock_.unique ()) {
+			return;
 		}
-	}
-}
 
-void manager::set_invert_behavior(bool invert)
-{
-	//any more than one reference means a lock on whiteboard state was requested
-	if(!activation_state_lock_.unique())
-		return;
-
-	bool block_whiteboard_activation = false;
-	if(!can_activate())
-	{
-		 block_whiteboard_activation = true;
-	}
-
-	if (invert)
-	{
-		if (!inverted_behavior_)
+		bool block_whiteboard_activation = false;
+		if (!can_activate ())
 		{
-			if (active_)
-			{
-				DBG_WB << "Whiteboard deactivated temporarily.\n";
-				inverted_behavior_ = true;
-				set_active(false);
-			}
-			else if (!block_whiteboard_activation)
-			{
-				DBG_WB << "Whiteboard activated temporarily.\n";
-				inverted_behavior_ = true;
-				set_active(true);
-			}
+			 block_whiteboard_activation = true;
 		}
-	}
-	else
-	{
-		if (inverted_behavior_)
+
+		if (invert)
 		{
-			if (active_)
+			if (!inverted_behavior_)
 			{
-				DBG_WB << "Whiteboard set back to deactivated status.\n";
-				inverted_behavior_ = false;
-				set_active(false);
+				if (active_)
+				{
+					DBG_WB << "Whiteboard deactivated temporarily.\n";
+					inverted_behavior_ = true;
+					set_active (false);
+				} else {
+					if (!block_whiteboard_activation)
+					{
+						DBG_WB << "Whiteboard activated temporarily.\n";
+						inverted_behavior_ = true;
+						set_active (true);
+					}
+				}
 			}
-			else if (!block_whiteboard_activation)
+		} else {
+			if (inverted_behavior_)
 			{
-				DBG_WB << "Whiteboard set back to activated status.\n";
-				inverted_behavior_ = false;
-				set_active(true);
+				if (active_)
+				{
+					DBG_WB << "Whiteboard set back to deactivated status.\n";
+					inverted_behavior_ = false;
+					set_active (false);
+				} else {
+					if (!block_whiteboard_activation)
+					{
+						DBG_WB << "Whiteboard set back to activated status.\n";
+						inverted_behavior_ = false;
+						set_active (true);
+					}
+				}
 			}
 		}
 	}
-}
 
-bool manager::can_enable_execution_hotkeys() const
-{
-	return can_enable_modifier_hotkeys() && viewer_side() == resources::controller->current_side()
-			&& viewer_actions()->turn_size(0) > 0;
-}
+	bool manager::can_enable_execution_hotkeys () const
+	{
+		return can_enable_modifier_hotkeys () && viewer_side () == resources::controller -> current_side ()
+			&& viewer_actions () -> turn_size (0) > 0;
+	}
 
-bool manager::can_enable_modifier_hotkeys() const
-{
-	return can_modify_game_state() && !viewer_actions()->empty();
-}
+	bool manager::can_enable_modifier_hotkeys () const
+	{
+		return can_modify_game_state () && !viewer_actions () -> empty ();
+	}
 
-bool manager::can_enable_reorder_hotkeys() const
-{
-	return can_enable_modifier_hotkeys() && highlighter_ && highlighter_->get_bump_target();
-}
+	bool manager::can_enable_reorder_hotkeys () const
+	{
+		return can_enable_modifier_hotkeys () && highlighter_ && highlighter_ -> get_bump_target ();
+	}
 
-bool manager::allow_leader_to_move(unit const& leader) const
-{
-	if(!has_actions())
-		return true;
-
-	//Look for another leader on another keep in the same castle
-	{ wb::future_map future; // start planned unit map scope
-		if(!has_planned_unit_map()) {
-			WRN_WB << "Unable to build future map to determine whether leader's allowed to move." << std::endl;
-		}
-		if(find_backup_leader(leader))
+	bool manager::allow_leader_to_move (unit const& leader) const
+	{
+		if (!has_actions ()) {
 			return true;
-	} // end planned unit map scope
+		}
 
-	if(viewer_actions()->empty()) {
+		//Look for another leader on another keep in the same castle
+		{ wb::future_map future; // start planned unit map scope
+			if (!has_planned_unit_map ()) 
+			{
+				WRN_WB << "Unable to build future map to determine whether leader's allowed to move." << std::endl;
+			}
+			if (find_backup_leader (leader)) {
+				return true;
+			}
+		} // end planned unit map scope
+
+		if (viewer_actions () -> empty ()) {
+			return true;
+		}
+
+		//Look for planned recruits that depend on this leader
+		BOOST_FOREACH(action_const_ptr action, *viewer_actions ())
+		{
+			recruit_const_ptr recruit = boost::dynamic_pointer_cast<class recruit const> (action);
+			recall_const_ptr recall = boost::dynamic_pointer_cast<class recall const> (action);
+			if	(recruit || recall)
+			{
+				map_location const target_hex = recruit?recruit -> get_recruit_hex ():recall -> get_recall_hex ();
+				if (dynamic_cast<game_state*> (resources::filter_con) -> can_recruit_on (leader, target_hex)) {
+					return false;
+				}
+			}
+		}
 		return true;
 	}
-
-	//Look for planned recruits that depend on this leader
-	BOOST_FOREACH(action_const_ptr action, *viewer_actions())
-	{
-		recruit_const_ptr recruit = boost::dynamic_pointer_cast<class recruit const>(action);
-		recall_const_ptr recall = boost::dynamic_pointer_cast<class recall const>(action);
-		if(recruit || recall)
-		{
-			map_location const target_hex = recruit?recruit->get_recruit_hex():recall->get_recall_hex();
-			if ( dynamic_cast<game_state*>(resources::filter_con)->can_recruit_on(leader, target_hex) )
-				return false;
-		}
-	}
-	return true;
-}
 
 void manager::on_init_side()
 {
