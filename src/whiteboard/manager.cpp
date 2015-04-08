@@ -303,278 +303,318 @@ static void print_to_chat(const std::string& title, const std::string& message)
 		return true;
 	}
 
-void manager::on_init_side()
-{
-	//Turn should never start with action auto-execution already enabled!
-	assert(!executing_all_actions_ && !executing_actions_);
-
-	update_plan_hiding(); /* validates actions */
-	wait_for_side_init_ = false;
-	LOG_WB << "on_init_side()\n";
-
-	if (self_activate_once_ && preferences::enable_whiteboard_mode_on_start())
+	void manager::on_init_side ()
 	{
-		self_activate_once_ = false;
-		set_active(true);
-	}
-}
+		//Turn should never start with action auto-execution already enabled!
+		assert (!executing_all_actions_ && !executing_actions_);
 
-void manager::on_finish_side_turn(int side)
-{
-	preparing_to_end_turn_ = false;
-	wait_for_side_init_ = true;
-	if(side == viewer_side() && !viewer_actions()->empty()) {
-		viewer_actions()->synced_turn_shift();
-	}
-	highlighter_.reset();
-	erase_temp_move();
-	LOG_WB << "on_finish_side_turn()\n";
-}
+		update_plan_hiding (); /* validates actions */
+		wait_for_side_init_ = false;
+		LOG_WB << "on_init_side()\n";
 
-void manager::pre_delete_action(action_ptr)
-{
-}
-
-void manager::post_delete_action(action_ptr action)
-{
-	// The fake unit representing the destination of a chain of planned moves should have the regular animation.
-	// If the last remaining action of the unit that owned this move is a move as well,
-	// adjust its appearance accordingly.
-
-	side_actions_ptr side_actions = resources::teams->at(action->team_index()).get_side_actions();
-
-	unit_ptr actor = action->get_unit();
-	if(actor) { // The unit might have died following the execution of an attack
-		side_actions::iterator action_it = side_actions->find_last_action_of(*actor);
-		if(action_it != side_actions->end()) {
-			move_ptr move = boost::dynamic_pointer_cast<class move>(*action_it);
-			if(move && move->get_fake_unit()) {
-				move->get_fake_unit()->anim_comp().set_standing(true);
-			}
-		}
-	}
-}
-
-static void hide_all_plans()
-{
-	BOOST_FOREACH(team& t, *resources::teams)
-		t.get_side_actions()->hide();
-}
-
-/* private */
-void manager::update_plan_hiding(size_t team_index)
-{
-	//We don't control the "viewing" side ... we're probably an observer
-	if(!resources::teams->at(team_index).is_local_human())
-		hide_all_plans();
-	else // normal circumstance
-	{
-		BOOST_FOREACH(team& t, *resources::teams)
+		if (self_activate_once_ && preferences::enable_whiteboard_mode_on_start ())
 		{
-			//make sure only appropriate teams are hidden
-			if(!t.is_network_human())
-				team_plans_hidden_[t.side()-1] = false;
-
-			if(t.is_enemy(team_index+1) || team_plans_hidden_[t.side()-1])
-				t.get_side_actions()->hide();
-			else
-				t.get_side_actions()->show();
+			self_activate_once_ = false;
+			set_active (true);
 		}
 	}
-	validate_viewer_actions();
-}
-void manager::update_plan_hiding()
-	{update_plan_hiding(viewer_team());}
 
-void manager::on_viewer_change(size_t team_index)
-{
-	if(!wait_for_side_init_)
-		update_plan_hiding(team_index);
-}
-
-void manager::on_change_controller(int side, const team& t)
-{
-	wb::side_actions& sa = *t.get_side_actions();
-	if(t.is_local_human()) // we own this side now
+	void manager::on_finish_side_turn (int side)
 	{
-		//tell everyone to clear this side's actions -- we're starting anew
-		resources::whiteboard->queue_net_cmd(sa.team_index(),sa.make_net_cmd_clear());
-		sa.clear();
-		//refresh the hidden_ attribute of every team's side_actions
-		update_plan_hiding();
-	}
-	else if(t.is_local_ai() || t.is_network_ai()) // no one owns this side anymore
-		sa.clear(); // clear its plans away -- the ai doesn't plan ... yet
-	else if(t.is_network()) // Another client is taking control of the side
-	{
-		if(side==viewer_side()) // They're taking OUR side away!
-			hide_all_plans(); // give up knowledge of everyone's plans, in case we became an observer
-
-		//tell them our plans -- they may not have received them up to this point
-		size_t num_teams = resources::teams->size();
-		for(size_t i=0; i<num_teams; ++i)
+		preparing_to_end_turn_ = false;
+		wait_for_side_init_ = true;
+		if (side == viewer_side () && !viewer_actions () -> empty ()) 
 		{
-			team& local_team = resources::teams->at(i);
-			if(local_team.is_local_human() && !local_team.is_enemy(side))
-				resources::whiteboard->queue_net_cmd(i,local_team.get_side_actions()->make_net_cmd_refresh());
+			viewer_actions () -> synced_turn_shift ();
 		}
-	}
-}
-
-bool manager::current_side_has_actions()
-{
-	if(current_side_actions()->empty()) {
-		return false;
+		highlighter_.reset ();
+		erase_temp_move ();
+		LOG_WB << "on_finish_side_turn()\n";
 	}
 
-	side_actions::range_t range = current_side_actions()->iter_turn(0);
-	return range.first != range.second; //non-empty range
-}
-
-void manager::validate_viewer_actions()
-{
-	LOG_WB << "'gamestate_mutated_' flag dirty, validating actions.\n";
-	gamestate_mutated_ = false;
-	if(has_planned_unit_map()) {
-		real_map();
-	} else {
-		future_map();
-	}
-}
-
-//helper fcn
-static void draw_numbers(map_location const& hex, side_actions::numbers_t numbers)
-{
-	std::vector<int>& numbers_to_draw = numbers.numbers_to_draw;
-	std::vector<size_t>& team_numbers = numbers.team_numbers;
-	int& main_number = numbers.main_number;
-	std::set<size_t>& secondary_numbers = numbers.secondary_numbers;
-
-	const double x_offset_base = 0.0;
-	const double y_offset_base = 0.2;
-	//position 0,0 in the hex is the upper left corner
-	//0.8 = horizontal coord., close to the right side of the hex
-	const double x_origin = 0.8 - numbers_to_draw.size() * x_offset_base;
-	//0.5 = halfway in the hex vertically
-	const double y_origin = 0.5 - numbers_to_draw.size() * (y_offset_base / 2);
-	double x_offset = 0, y_offset = 0;
-
-	size_t size = numbers_to_draw.size();
-	for(size_t i=0; i<size; ++i)
+	void manager::pre_delete_action (action_ptr)
 	{
-		int number = numbers_to_draw[i];
-
-		std::string number_text = boost::lexical_cast<std::string>(number);
-		size_t font_size;
-		if (int(i) == main_number) font_size = 19;
-		else if (secondary_numbers.find(i)!=secondary_numbers.end()) font_size = 17;
-		else font_size = 15;
-
-		SDL_Color color = team::get_side_color(static_cast<int>(team_numbers[i]+1));
-		const double x_in_hex = x_origin + x_offset;
-		const double y_in_hex = y_origin + y_offset;
-		resources::screen->draw_text_in_hex(hex, display::LAYER_ACTIONS_NUMBERING,
-				number_text, font_size, color, x_in_hex, y_in_hex);
-		x_offset += x_offset_base;
-		y_offset += y_offset_base;
 	}
-}
 
-
-namespace
-{
-	//Helper struct that finds all units teams whose planned actions are currently visible
-	//Only used by manager::pre_draw().
-	//Note that this structure is used as a functor.
-	struct move_owners_finder: public visitor
+	void manager::post_delete_action (action_ptr action)
 	{
+		// The fake unit representing the destination of a chain of planned moves should have the regular animation.
+		// If the last remaining action of the unit that owned this move is a move as well,
+		// adjust its appearance accordingly.
 
-	public:
-		move_owners_finder(): move_owners_() { }
+		side_actions_ptr side_actions = resources::teams -> at (action -> team_index ()).get_side_actions ();
 
-		void operator()(action_ptr action) {
-			action->accept(*this);
-		}
-
-		std::set<size_t> const& get_units_owning_moves() {
-			return move_owners_;
-		}
-
-		virtual void visit(move_ptr move) {
-			if(size_t id = move->get_unit_id()) {
-				move_owners_.insert(id);
-			}
-		}
-
-		virtual void visit(attack_ptr attack) {
-			//also add attacks if they have an associated move
-			if(attack->get_route().steps.size() >= 2) {
-				if(size_t id = attack->get_unit_id()) {
-					move_owners_.insert(id);
+		unit_ptr actor = action -> get_unit ();
+		if (actor) 
+		{ // The unit might have died following the execution of an attack
+			side_actions::iterator action_it = side_actions -> find_last_action_of (*actor);
+			if (action_it != side_actions->end ()) 
+			{
+				move_ptr move = boost::dynamic_pointer_cast<class move> (*action_it);
+				if (move && move -> get_fake_unit ()) 
+				{
+					move -> get_fake_unit () -> anim_comp ().set_standing (true);
 				}
 			}
 		}
-		virtual void visit(recruit_ptr){}
-		virtual void visit(recall_ptr){}
-		virtual void visit(suppose_dead_ptr){}
-
-	private:
-		std::set<size_t> move_owners_;
-	};
-}
-
-void manager::pre_draw()
-{
-	if (can_modify_game_state() && has_actions()) {
-		move_owners_finder move_finder;
-		for_each_action(boost::ref(move_finder));
-		units_owning_moves_ = move_finder.get_units_owning_moves();
-
-		BOOST_FOREACH(size_t unit_id, units_owning_moves_) {
-			unit_map::iterator unit_iter = resources::units->find(unit_id);
-			assert(unit_iter.valid());
-			ghost_owner_unit(&*unit_iter);
-		}
 	}
-}
 
-void manager::post_draw()
-{
-	BOOST_FOREACH(size_t unit_id, units_owning_moves_)
+	static void hide_all_plans ()
 	{
-		unit_map::iterator unit_iter = resources::units->find(unit_id);
-		if (unit_iter.valid()) {
-			unghost_owner_unit(&*unit_iter);
-		}
-	}
-	units_owning_moves_.clear();
-}
+		BOOST_FOREACH (team& t, *resources::teams)
+			t.get_side_actions () -> hide ();
+ 	}
 
-void manager::draw_hex(const map_location& hex)
-{
-	/**
-	 * IMPORTANT: none of the code in this method can call anything which would
-	 * cause a hex to be invalidated (i.e. by calling in turn any variant of display::invalidate()).
-	 * Doing so messes up the iterator currently going over the list of invalidated hexes to draw.
-	 */
-
-	if (!wait_for_side_init_ && has_actions())
+	/* private */
+	void manager::update_plan_hiding (size_t team_index)
 	{
-		//call draw() for all actions
-		for_each_action(boost::bind(&action::draw_hex, _1, hex));
-
-		//Info about the action numbers to be displayed on screen.
-		side_actions::numbers_t numbers;
-		BOOST_FOREACH(team& t, *resources::teams)
+		//We don't control the "viewing" side ... we're probably an observer
+		if (!resources::teams -> at (team_index).is_local_human ())
 		{
-			side_actions& sa = *t.get_side_actions();
-			if(!sa.hidden())
-				sa.get_numbers(hex,numbers);
+			hide_all_plans ();
+		} else { // normal circumstance
+			BOOST_FOREACH (team& t, *resources::teams)
+			{
+				//make sure only appropriate teams are hidden
+				if (!t.is_network_human ())
+				{
+					team_plans_hidden_[t.side()-1] = false;
+				}
+
+				if (t.is_enemy (team_index+1) || team_plans_hidden_[t.side ()-1])
+				{
+					t.get_side_actions () -> hide ();
+				} else {
+					t.get_side_actions () -> show ();
+				}
+			}
 		}
-		draw_numbers(hex,numbers); // helper fcn
+		validate_viewer_actions();
+	}
+	
+	void manager::update_plan_hiding ()
+	{
+		update_plan_hiding(viewer_team ());
 	}
 
-}
+	void manager::on_viewer_change (size_t team_index)
+	{
+		if (!wait_for_side_init_)
+		{
+			update_plan_hiding (team_index);
+		}
+	}
+
+	void manager::on_change_controller (int side, const team& t)
+	{
+		wb::side_actions& sa = *t.get_side_actions ();
+		if (t.is_local_human ()) // we own this side now
+		{
+			//tell everyone to clear this side's actions -- we're starting anew
+			resources::whiteboard -> queue_net_cmd (sa.team_index (),sa.make_net_cmd_clear ());
+			sa.clear ();
+			//refresh the hidden_ attribute of every team's side_actions
+			update_plan_hiding ();
+		} else {
+		
+			if (t.is_local_ai() || t.is_network_ai ()) // no one owns this side anymore
+			{
+				sa.clear (); // clear its plans away -- the ai doesn't plan ... yet
+			} else {
+			
+				if (t.is_network ()) // Another client is taking control of the side
+				{
+					if(side==viewer_side ()) // They're taking OUR side away!
+					{
+						hide_all_plans (); // give up knowledge of everyone's plans, in case we became an observer
+					}
+					//tell them our plans -- they may not have received them up to this point
+					size_t num_teams = resources::teams->size();
+					for (size_t i = 0; i < num_teams; ++i)
+					{
+						team& local_team = resources::teams -> at (i);
+						if (local_team.is_local_human () && !local_team.is_enemy (side))
+						{
+							resources::whiteboard -> queue_net_cmd (i,local_team.get_side_actions () -> make_net_cmd_refresh ());
+						}
+					}
+				}
+			}
+		}
+	}
+
+	bool manager::current_side_has_actions ()
+	{
+		if (current_side_actions () -> empty ()) {
+			return false;
+		}
+
+		side_actions::range_t range = current_side_actions () -> iter_turn (0);
+		return range.first != range.second; //non-empty range
+	}
+
+	void manager::validate_viewer_actions ()
+	{
+		LOG_WB << "'gamestate_mutated_' flag dirty, validating actions.\n";
+		gamestate_mutated_ = false;
+		if (has_planned_unit_map ()) 
+		{
+			real_map ();
+		} else {
+			future_map ();
+		}
+	}
+
+	//helper fcn
+	static void draw_numbers (map_location const& hex, side_actions::numbers_t numbers)
+	{
+		std::vector<int>& numbers_to_draw = numbers.numbers_to_draw;
+		std::vector<size_t>& team_numbers = numbers.team_numbers;
+		int& main_number = numbers.main_number;
+		std::set<size_t>& secondary_numbers = numbers.secondary_numbers;
+
+		const double x_offset_base = 0.0;
+		const double y_offset_base = 0.2;
+		//position 0,0 in the hex is the upper left corner
+		//0.8 = horizontal coord., close to the right side of the hex
+		const double x_origin = 0.8 - numbers_to_draw.size () * x_offset_base;
+		//0.5 = halfway in the hex vertically
+		const double y_origin = 0.5 - numbers_to_draw.size () * (y_offset_base / 2);
+		double x_offset = 0, y_offset = 0;
+
+		size_t size = numbers_to_draw.size ();
+		for (size_t i = 0; i < size; ++i)
+		{
+			int number = numbers_to_draw[i];
+
+			std::string number_text = boost::lexical_cast<std::string> (number);
+			size_t font_size;
+			if (int (i) == main_number) 
+			{
+				font_size = 19;
+			} else {
+				if (secondary_numbers.find (i) != secondary_numbers.end ())
+				{
+					font_size = 17;
+				} else {
+					font_size = 15;
+				}
+			}
+
+			SDL_Color color = team::get_side_color (static_cast<int> (team_numbers[i] + 1));
+			const double x_in_hex = x_origin + x_offset;
+			const double y_in_hex = y_origin + y_offset;
+			resources::screen -> draw_text_in_hex (hex, display::LAYER_ACTIONS_NUMBERING,
+				number_text, font_size, color, x_in_hex, y_in_hex);
+			x_offset += x_offset_base;
+			y_offset += y_offset_base;
+		}
+	}
+
+
+	namespace
+	{
+		//Helper struct that finds all units teams whose planned actions are currently visible
+		//Only used by manager::pre_draw().
+		//Note that this structure is used as a functor.
+		struct move_owners_finder: public visitor
+		{
+
+		public:
+			move_owners_finder (): move_owners_ () { }
+
+			void operator () (action_ptr action) 
+			{
+				action -> accept (*this);
+			}
+
+			std::set<size_t> const& get_units_owning_moves () {
+				return move_owners_;
+			}
+
+			virtual void visit (move_ptr move) 
+			{
+				if (size_t id = move->get_unit_id ()) 
+				{
+					move_owners_.insert(id);
+				}
+			}
+
+			virtual void visit(attack_ptr attack) {
+				//also add attacks if they have an associated move
+				if (attack -> get_route ().steps.size () >= 2) 
+				{
+					if (size_t id = attack -> get_unit_id ()) 
+					{
+						move_owners_.insert (id);
+					}
+				}
+			}
+			virtual void visit (recruit_ptr){}
+			virtual void visit (recall_ptr){}
+			virtual void visit (suppose_dead_ptr){}
+
+		private:
+			std::set<size_t> move_owners_;
+		};
+	}
+
+	void manager::pre_draw ()
+	{
+		if (can_modify_game_state () && has_actions ()) 
+		{
+			move_owners_finder move_finder;
+			for_each_action (boost::ref (move_finder));
+			units_owning_moves_ = move_finder.get_units_owning_moves ();
+
+			BOOST_FOREACH (size_t unit_id, units_owning_moves_) 
+			{
+				unit_map::iterator unit_iter = resources::units -> find (unit_id);
+				assert (unit_iter.valid ());
+				ghost_owner_unit (&*unit_iter);
+			}
+		}
+	}	
+
+	void manager::post_draw ()
+	{
+		BOOST_FOREACH (size_t unit_id, units_owning_moves_)
+		{
+			unit_map::iterator unit_iter = resources::units -> find (unit_id);
+			if (unit_iter.valid()) 
+			{
+				unghost_owner_unit (&*unit_iter);
+			}
+		}
+		units_owning_moves_.clear ();
+	}
+
+	void manager::draw_hex (const map_location& hex)
+	{
+		/**
+		 * IMPORTANT: none of the code in this method can call anything which would
+		 * cause a hex to be invalidated (i.e. by calling in turn any variant of display::invalidate()).
+		 * Doing so messes up the iterator currently going over the list of invalidated hexes to draw.
+		 */
+
+		if (!wait_for_side_init_ && has_actions ())
+		{
+			//call draw() for all actions
+			for_each_action (boost::bind (&action::draw_hex, _1, hex));
+
+			//Info about the action numbers to be displayed on screen.
+			side_actions::numbers_t numbers;
+			BOOST_FOREACH (team& t, *resources::teams)
+			{
+				side_actions& sa = *t.get_side_actions ();
+				if (!sa.hidden ())
+				{
+					sa.get_numbers (hex,numbers);
+				}
+			}
+			draw_numbers (hex,numbers); // helper fcn
+		}
+	}
 
 void manager::on_mouseover_change(const map_location& hex)
 {
