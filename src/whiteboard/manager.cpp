@@ -616,285 +616,295 @@ static void print_to_chat(const std::string& title, const std::string& message)
 		}
 	}
 
-void manager::on_mouseover_change(const map_location& hex)
-{
-
-	map_location selected_hex = resources::controller->get_mouse_handler_base().get_selected_hex();
-	bool hex_has_unit;
-	{ wb::future_map future; // start planned unit map scope
-		hex_has_unit = resources::units->find(selected_hex) != resources::units->end();
-	} // end planned unit map scope
-	if (!((selected_hex.valid() && hex_has_unit)
-			|| has_temp_move() || wait_for_side_init_ || executing_actions_))
+	void manager::on_mouseover_change (const map_location& hex)
 	{
-		if (!highlighter_)
+
+		map_location selected_hex = resources::controller -> get_mouse_handler_base ().get_selected_hex ();
+		bool hex_has_unit;
+		{ wb::future_map future; // start planned unit map scope
+			hex_has_unit = resources::units -> find (selected_hex) != resources::units -> end ();
+		} // end planned unit map scope
+		if (!((selected_hex.valid () && hex_has_unit)
+			|| has_temp_move () || wait_for_side_init_ || executing_actions_))
 		{
-			highlighter_.reset(new highlighter(*resources::units, viewer_actions()));
-		}
-		highlighter_->set_mouseover_hex(hex);
-		highlighter_->highlight();
-	}
-}
-
-void manager::on_gamestate_change()
-{
-	DBG_WB << "Manager received gamestate change notification.\n";
-	// if on_gamestate_change() is called while the future unit map is applied,
-	// it means that the future unit map scope is used where it shouldn't be.
-	assert(!planned_unit_map_active_);
-	// Set mutated flag so action queue gets validated on next future map build
-	gamestate_mutated_ = true;
-	//Clear exclusive draws that might not get a chance to be cleared the normal way
-	resources::screen->clear_exclusive_draws();
-}
-
-void manager::send_network_data()
-{
-	size_t size = net_buffer_.size();
-	for(size_t team_index=0; team_index<size; ++team_index)
-	{
-		config& buf_cfg = net_buffer_[team_index];
-
-		if(buf_cfg.empty())
-			continue;
-
-		config packet;
-		config& wb_cfg = packet.add_child("whiteboard",buf_cfg);
-		wb_cfg["side"] = static_cast<int>(team_index+1);
-		wb_cfg["team_name"] = resources::teams->at(team_index).team_name();
-
-		buf_cfg = config();
-
-		network::send_data(packet,0,"whiteboard");
-
-		size_t count = wb_cfg.child_count("net_cmd");
-		LOG_WB << "Side " << (team_index+1) << " sent wb data (" << count << " cmds).\n";
-	}
-}
-
-void manager::process_network_data(config const& cfg)
-{
-	if(config const& wb_cfg = cfg.child("whiteboard"))
-	{
-		size_t count = wb_cfg.child_count("net_cmd");
-		LOG_WB << "Received wb data (" << count << ").\n";
-
-		team& team_from = resources::teams->at(wb_cfg["side"]-1);
-		BOOST_FOREACH(side_actions::net_cmd const& cmd, wb_cfg.child_range("net_cmd"))
-			team_from.get_side_actions()->execute_net_cmd(cmd);
-	}
-}
-
-void manager::queue_net_cmd(size_t team_index, side_actions::net_cmd const& cmd)
-{
-	assert(team_index < net_buffer_.size());
-	net_buffer_[team_index].add_child("net_cmd",cmd);
-}
-
-void manager::create_temp_move()
-{
-	route_.reset();
-
-	/*
-	 * CHECK PRE-CONDITIONS
-	 * (This section has multiple return paths.)
-	 */
-
-	if ( !active_ || !can_modify_game_state() )
-		return;
-
-	pathfind::marked_route const& route =
-			resources::controller->get_mouse_handler_base().get_current_route();
-
-	if (route.steps.empty() || route.steps.size() < 2) return;
-
-	unit* temp_moved_unit =
-			future_visible_unit(resources::controller->get_mouse_handler_base().get_selected_hex(), viewer_side());
-	if (!temp_moved_unit) temp_moved_unit =
-			future_visible_unit(resources::controller->get_mouse_handler_base().get_last_hex(), viewer_side());
-	if (!temp_moved_unit) return;
-	if (temp_moved_unit->side() != resources::screen->viewing_side()) return;
-
-	/*
-	 * DONE CHECKING PRE-CONDITIONS, CREATE THE TEMP MOVE
-	 * (This section has only one return path.)
-	 */
-
-	temp_move_unit_underlying_id_ = temp_moved_unit->underlying_id();
-
-	//@todo: May be appropriate to replace these separate components by a temporary
-	//      wb::move object
-
-	route_.reset(new pathfind::marked_route(route));
-	//NOTE: route_->steps.back() = dst, and route_->steps.front() = src
-
-	size_t turn = 0;
-	std::vector<map_location>::iterator prev_itor = route.steps.begin();
-	std::vector<map_location>::iterator curr_itor = prev_itor;
-	std::vector<map_location>::iterator end_itor  = route.steps.end();
-	for(; curr_itor!=end_itor; ++curr_itor)
-	{
-		const map_location& hex = *curr_itor;
-
-		//search for end-of-turn marks
-		pathfind::marked_route::mark_map::const_iterator w =
-				route.marks.find(hex);
-		if(w != route.marks.end() && w->second.turns > 0)
-		{
-			turn = w->second.turns-1;
-
-			if(turn >= move_arrows_.size())
-				move_arrows_.resize(turn+1);
-			if(turn >= fake_units_.size())
-				fake_units_.resize(turn+1);
-
-			arrow_ptr& move_arrow = move_arrows_[turn];
-			fake_unit_ptr& fake_unit = fake_units_[turn];
-
-			if(!move_arrow)
+			if (!highlighter_)
 			{
-				// Create temp arrow
-				move_arrow.reset(new arrow());
-				move_arrow->set_color(team::get_side_color_index(
-						viewer_side()));
-				move_arrow->set_style(arrow::STYLE_HIGHLIGHTED);
+				highlighter_.reset (new highlighter (*resources::units, viewer_actions ()));
 			}
+			highlighter_ -> set_mouseover_hex (hex);
+			highlighter_ -> highlight ();
+		}
+	}
 
-			arrow_path_t path(prev_itor,curr_itor+1);
-			move_arrow->set_path(path);
+	void manager::on_gamestate_change ()
+	{
+		DBG_WB << "Manager received gamestate change notification.\n";
+		// if on_gamestate_change() is called while the future unit map is applied,
+		// it means that the future unit map scope is used where it shouldn't be.
+		assert (!planned_unit_map_active_);
+		// Set mutated flag so action queue gets validated on next future map build
+		gamestate_mutated_ = true;
+		//Clear exclusive draws that might not get a chance to be cleared the normal way
+		resources::screen -> clear_exclusive_draws ();
+	}
 
-			if(path.size() >= 2)
+	void manager::send_network_data ()
+	{
+		size_t size = net_buffer_.size ();
+		for (size_t team_index = 0; team_index < size; ++team_index)
+		{
+			config& buf_cfg = net_buffer_[team_index];
+
+			if(buf_cfg.empty ()) {
+				continue;
+			}
+			config packet;
+			config& wb_cfg = packet.add_child ("whiteboard",buf_cfg);
+			wb_cfg["side"] = static_cast<int> (team_index+1);
+			wb_cfg["team_name"] = resources::teams -> at (team_index).team_name ();
+			buf_cfg = config ();
+			network::send_data (packet,0,"whiteboard");
+			size_t count = wb_cfg.child_count ("net_cmd");
+			LOG_WB << "Side " << (team_index+1) << " sent wb data (" << count << " cmds).\n";
+		}
+	}
+
+	void manager::process_network_data(config const& cfg)
+	{
+		if (config const& wb_cfg = cfg.child ("whiteboard"))
+		{
+			size_t count = wb_cfg.child_count ("net_cmd");
+			LOG_WB << "Received wb data (" << count << ").\n";
+
+			team& team_from = resources::teams -> at (wb_cfg["side"]-1);
+			BOOST_FOREACH (side_actions::net_cmd const& cmd, wb_cfg.child_range ("net_cmd"))
+			team_from.get_side_actions()->execute_net_cmd(cmd);
+		}
+	}
+
+	void manager::queue_net_cmd (size_t team_index, side_actions::net_cmd const& cmd)
+	{
+		assert (team_index < net_buffer_.size ());
+		net_buffer_[team_index].add_child ("net_cmd",cmd);
+	}	
+
+	void manager::create_temp_move ()
+	{
+		route_.reset ();
+
+		/*
+		 * CHECK PRE-CONDITIONS
+		 * (This section has multiple return paths.)
+		 */
+
+		if (!active_ || !can_modify_game_state ()) {
+			return;
+		}
+
+		pathfind::marked_route const& route =
+			resources::controller->get_mouse_handler_base ().get_current_route ();
+
+		if (route.steps.empty () || route.steps.size () < 2) {
+			return;
+		}
+
+		unit* temp_moved_unit =
+			future_visible_unit (resources::controller -> get_mouse_handler_base ().get_selected_hex (), viewer_side ());
+		if (!temp_moved_unit) 
+		{
+			temp_moved_unit = future_visible_unit(resources::controller->get_mouse_handler_base().get_last_hex(), viewer_side());
+		}
+		if (!temp_moved_unit) {
+			return;
+		}
+		if (temp_moved_unit -> side () != resources::screen -> viewing_side()) {
+			return;
+		}
+
+		/*
+		 * DONE CHECKING PRE-CONDITIONS, CREATE THE TEMP MOVE
+		 * (This section has only one return path.)
+		 */
+
+		temp_move_unit_underlying_id_ = temp_moved_unit->underlying_id ();
+
+		//@todo: May be appropriate to replace these separate components by a temporary
+		//  wb::move object
+
+		route_.reset (new pathfind::marked_route (route));
+		//NOTE: route_->steps.back() = dst, and route_->steps.front() = src
+
+		size_t turn = 0;
+		std::vector<map_location>::iterator prev_itor = route.steps.begin ();
+		std::vector<map_location>::iterator curr_itor = prev_itor;
+		std::vector<map_location>::iterator end_itor  = route.steps.end ();
+		for (; curr_itor != end_itor; ++curr_itor)
+		{
+			const map_location& hex = *curr_itor;
+
+			//search for end-of-turn marks
+			pathfind::marked_route::mark_map::const_iterator w =
+				route.marks.find (hex);
+			if (w != route.marks.end () && w -> second.turns > 0)
 			{
-				if(!fake_unit)
+				turn = w -> second.turns - 1;
+
+				if (turn >= move_arrows_.size()) 
 				{
-					// Create temp ghost unit
-					fake_unit = fake_unit_ptr(unit_ptr (new unit(*temp_moved_unit)), resources::fake_units);
-					fake_unit->anim_comp().set_ghosted(true);
+					move_arrows_.resize (turn+1);
+				}
+				if (turn >= fake_units_.size ()) 
+				{
+					fake_units_.resize (turn+1);
+				}
+				arrow_ptr& move_arrow = move_arrows_[turn];
+				fake_unit_ptr& fake_unit = fake_units_[turn];
+
+				if (!move_arrow)
+				{
+					// Create temp arrow
+					move_arrow.reset (new arrow ());
+					move_arrow -> set_color (team::get_side_color_index (
+						viewer_side ()));
+					move_arrow -> set_style (arrow::STYLE_HIGHLIGHTED);
 				}
 
-				unit_display::move_unit(path, fake_unit.get_unit_ptr(), false); //get facing right
-				fake_unit->anim_comp().invalidate(*game_display::get_singleton());
-				fake_unit->set_location(*curr_itor);
-				fake_unit->anim_comp().set_ghosted(true);
+				arrow_path_t path (prev_itor,curr_itor+1);
+				move_arrow -> set_path (path);
+
+				if (path.size () >= 2)
+				{
+					if (!fake_unit)
+					{
+						// Create temp ghost unit
+						fake_unit = fake_unit_ptr (unit_ptr (new unit (*temp_moved_unit)), resources::fake_units);
+						fake_unit -> anim_comp ().set_ghosted (true);
+					}
+
+					unit_display::move_unit (path, fake_unit.get_unit_ptr (), false); //get facing right
+					fake_unit -> anim_comp ().invalidate (*game_display::get_singleton ());
+					fake_unit -> set_location (*curr_itor);
+					fake_unit -> anim_comp ().set_ghosted (true);
+				} else { //zero-hex path -- don't bother drawing a fake unit
+					fake_unit.reset ();
+				}
+
+				prev_itor = curr_itor;
 			}
-			else //zero-hex path -- don't bother drawing a fake unit
-				fake_unit.reset();
-
-			prev_itor = curr_itor;
-		}
+		} // end for().
+		//in case path shortens on next step and one ghosted unit has to be removed
+		int ind = fake_units_.size () - 1;
+		fake_units_[ind]->anim_comp ().invalidate (*game_display::get_singleton ());
+		//toss out old arrows and fake units
+		move_arrows_.resize (turn+1);
+		fake_units_.resize (turn+1);
 	}
-	//in case path shortens on next step and one ghosted unit has to be removed
-	int ind = fake_units_.size() - 1;
-	fake_units_[ind]->anim_comp().invalidate(*game_display::get_singleton());
-	//toss out old arrows and fake units
-	move_arrows_.resize(turn+1);
-	fake_units_.resize(turn+1);
-}
 
-void manager::erase_temp_move()
-{
-	move_arrows_.clear();
-	BOOST_FOREACH(fake_unit_ptr const& tmp, fake_units_) {
-		if(tmp) {
-			tmp->anim_comp().invalidate(*game_display::get_singleton());
-		}
-	}
-	fake_units_.clear();
-	route_.reset();
-	temp_move_unit_underlying_id_ = 0;
-}
-
-void manager::save_temp_move()
-{
-	if (has_temp_move() && !executing_actions_ && !resources::controller->is_linger_mode())
+	void manager::erase_temp_move ()
 	{
-		side_actions& sa = *viewer_actions();
-		unit* u = future_visible_unit(route_->steps.front());
-		assert(u);
-		size_t first_turn = sa.get_turn_num_of(*u);
-
-		validate_viewer_actions();
-
-		assert(move_arrows_.size() == fake_units_.size());
-		size_t size = move_arrows_.size();
-		for(size_t i=0; i<size; ++i)
+		move_arrows_.clear ();
+		BOOST_FOREACH (fake_unit_ptr const& tmp, fake_units_) 
 		{
-			arrow_ptr move_arrow = move_arrows_[i];
-			if(!arrow::valid_path(move_arrow->get_path()))
-				continue;
-
-			size_t turn = first_turn + i;
-			fake_unit_ptr fake_unit = fake_units_[i];
-
-			//@todo Using a marked_route here is wrong, since right now it's not marked
-			//either switch over to a plain route for planned moves, or mark it correctly
-			pathfind::marked_route route;
-			route.steps = move_arrow->get_path();
-			route.move_cost = path_cost(route.steps,*u);
-
-			sa.queue_move(turn,*u,route,move_arrow,fake_unit);
+			if (tmp) 
+			{
+				tmp -> anim_comp ().invalidate (*game_display::get_singleton ());
+			}
 		}
-		erase_temp_move();
-
-		LOG_WB << *viewer_actions() << "\n";
-		print_help_once();
+		fake_units_.clear ();
+		route_.reset ();
+		temp_move_unit_underlying_id_ = 0;
 	}
-}
 
-unit_map::iterator manager::get_temp_move_unit() const
-{
-	return resources::units->find(temp_move_unit_underlying_id_);
-}
-
-void manager::save_temp_attack(const map_location& attacker_loc, const map_location& defender_loc, int weapon_choice)
-{
-	if (active_ && !executing_actions_ && !resources::controller->is_linger_mode())
+	void manager::save_temp_move ()
 	{
-		assert(weapon_choice >= 0);
-
-		arrow_ptr move_arrow;
-		fake_unit_ptr fake_unit;
-		map_location source_hex;
-
-		if (route_ && !route_->steps.empty())
+		if (has_temp_move () && !executing_actions_ && !resources::controller -> is_linger_mode ())
 		{
-			//attack-move
-			assert(move_arrows_.size() == 1);
-			assert(fake_units_.size() == 1);
-			move_arrow = move_arrows_.front();
-			fake_unit = fake_units_.front();
+			side_actions& sa = *viewer_actions ();
+			unit* u = future_visible_unit (route_->steps.front ());
+			assert (u);
+			size_t first_turn = sa.get_turn_num_of (*u);
 
-			assert(route_->steps.back() == attacker_loc);
-			source_hex = route_->steps.front();
+			validate_viewer_actions ();
 
-			fake_unit->anim_comp().set_disabled_ghosted(true);
+			assert (move_arrows_.size () == fake_units_.size ());
+			size_t size = move_arrows_.size ();
+			for (size_t i = 0; i < size; ++i)
+			{
+				arrow_ptr move_arrow = move_arrows_[i];
+				if (!arrow::valid_path (move_arrow -> get_path ())) {
+					continue;
+				}
+
+				size_t turn = first_turn + i;
+				fake_unit_ptr fake_unit = fake_units_[i];
+
+				//@todo Using a marked_route here is wrong, since right now it's not marked
+				//either switch over to a plain route for planned moves, or mark it correctly
+				pathfind::marked_route route;
+				route.steps = move_arrow -> get_path ();
+				route.move_cost = path_cost (route.steps,*u);
+
+				sa.queue_move (turn,*u,route,move_arrow,fake_unit);
+			}
+			erase_temp_move ();
+
+			LOG_WB << *viewer_actions () << "\n";
+			print_help_once ();
 		}
-		else
-		{
-			//simple attack
-			move_arrow.reset(new arrow);
-			source_hex = attacker_loc;
-			route_.reset(new pathfind::marked_route);
-			// We'll pass as parameter a one-hex route with no marks.
-			route_->steps.push_back(attacker_loc);
-		}
-
-		unit* attacking_unit = future_visible_unit(source_hex);
-		assert(attacking_unit);
-
-		validate_viewer_actions();
-
-		side_actions& sa = *viewer_actions();
-		sa.queue_attack(sa.get_turn_num_of(*attacking_unit),*attacking_unit,defender_loc,weapon_choice,*route_,move_arrow,fake_unit);
-
-		print_help_once();
-
-		resources::screen->invalidate(defender_loc);
-		resources::screen->invalidate(attacker_loc);
-		erase_temp_move();
-		LOG_WB << *viewer_actions() << "\n";
 	}
-}
+
+	unit_map::iterator manager::get_temp_move_unit () const
+	{
+		return resources::units -> find (temp_move_unit_underlying_id_);
+	}
+
+	void manager::save_temp_attack (const map_location& attacker_loc, const map_location& defender_loc, int weapon_choice)
+	{
+		if (active_ && !executing_actions_ && !resources::controller -> is_linger_mode ())
+		{
+			assert (weapon_choice >= 0);
+
+			arrow_ptr move_arrow;
+			fake_unit_ptr fake_unit;
+			map_location source_hex;
+
+			if (route_ && !route_->steps.empty())
+			{
+				//attack-move
+				assert (move_arrows_.size () == 1);
+				assert (fake_units_.size () == 1);
+				move_arrow = move_arrows_.front ();
+				fake_unit = fake_units_.front ();
+
+				assert (route_ -> steps.back () == attacker_loc);
+				source_hex = route_ -> steps.front ();
+
+				fake_unit -> anim_comp ().set_disabled_ghosted (true);
+			} else {
+				//simple attack
+				move_arrow.reset (new arrow);
+				source_hex = attacker_loc;
+				route_.reset (new pathfind::marked_route);
+				// We'll pass as parameter a one-hex route with no marks.
+				route_ -> steps.push_back (attacker_loc);
+			}
+
+			unit* attacking_unit = future_visible_unit (source_hex);
+			assert (attacking_unit);
+
+			validate_viewer_actions ();
+
+			side_actions& sa = *viewer_actions ();
+			sa.queue_attack (sa.get_turn_num_of																		  	  (*attacking_unit),*attacking_unit,defender_loc,weapon_choice,*route_,move_arrow,fake_unit);
+
+			print_help_once ();
+
+			resources::screen -> invalidate (defender_loc);
+			resources::screen -> invalidate (attacker_loc);
+			erase_temp_move ();
+			LOG_WB << *viewer_actions () << "\n";
+		}
+	}
 
 bool manager::save_recruit(const std::string& name, int side_num, const map_location& recruit_hex)
 {
