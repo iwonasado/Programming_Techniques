@@ -38,27 +38,27 @@ namespace {
 std::vector<hotkey::hotkey_item> hotkeys_;
 config default_hotkey_cfg_;
 
-hotkey::hotkey_item null_hotkey_("null");
+hotkey::hotkey_item null_hotkey_ ("null");
 
-hotkey::hotkey_item& get_hotkey(int mouse, int joystick, int button, int hat, int value,
+hotkey::hotkey_item& get_hotkey (int mouse, int joystick, int button, int hat, int value,
 		bool shift, bool ctrl, bool cmd, bool alt)
 {
 	std::vector<hotkey::hotkey_item>::iterator itor;
 
-	for (itor = hotkeys_.begin(); itor != hotkeys_.end(); ++itor) {
+	for (itor = hotkeys_.begin (); itor != hotkeys_.end (); ++itor) {
 
-		if ( !( hotkey::is_scope_active(hotkey::get_hotkey_command(itor->get_command()).scope) && itor->active() ) ) {
+		if (! (hotkey::is_scope_active (hotkey::get_hotkey_command (itor->get_command ()).scope) && itor->active ())) {
 			continue;
 		}
 
-		if ( itor->get_shift() != shift || itor->get_ctrl() != ctrl
-				|| itor->get_cmd() != cmd || itor->get_alt() != alt ) {
+		if (itor->get_shift () != shift || itor->get_ctrl () != ctrl
+				|| itor->get_cmd () != cmd || itor->get_alt () != alt) {
 			continue;
 		}
 
-		if ( itor->get_joystick() == joystick && itor->get_button() == button
-				&& itor->get_hat() == hat && itor->get_value() == value
-				&& itor->get_mouse() == mouse ) {
+		if (itor->get_joystick () == joystick && itor->get_button () == button
+				&& itor->get_hat () == hat && itor->get_value () == value
+				&& itor->get_mouse () == mouse) {
 			return *itor;
 		}
 	}
@@ -66,43 +66,52 @@ hotkey::hotkey_item& get_hotkey(int mouse, int joystick, int button, int hat, in
 	return null_hotkey_;
 }
 
-hotkey::hotkey_item& get_hotkey(int character, int keycode,
+hotkey::hotkey_item& get_hotkey (int character, int keycode,
 		bool shift, bool ctrl,	bool cmd, bool alt)
 {
 	std::vector<hotkey::hotkey_item>::iterator itor;
 
-	DBG_G << "getting hotkey: char=" << lexical_cast<std::string>(character)
-		<< " keycode="  << lexical_cast<std::string>(keycode) << " "
+	DBG_G << "getting hotkey: char=" << lexical_cast<std::string> (character)
+		<< " keycode="  << lexical_cast<std::string> (keycode) << " "
 		<< (shift ? "shift," : "")
-		<< (ctrl  ? "ctrl,"  : "")
-		<< (cmd   ? "cmd,"   : "")
-		<< (alt   ? "alt,"   : "")
+		<< (ctrl ? "ctrl," : "")
+		<< (cmd ? "cmd," : "")
+		<< (alt ? "alt," : "")
 		<< "\n";
 
 	// Sometimes control modifies by -64, ie ^A == 1.
-	if (0 < character && character < 64 && ctrl) {
-		if (shift) {
+	if (0 < character && character < 64 && ctrl) 
+	{
+		if (shift) 
+		{
 			character += 64;
 		} else {
 			character += 96;
 		}
 		/// @todo
-		DBG_G << "Mapped to character " << lexical_cast<std::string>(character) << "\n";
+		DBG_G << "Mapped to character " << lexical_cast<std::string> (character) << "\n";
 	}
 
 	// For some reason on Mac OS, if cmd and shift are down, the character doesn't get upper-cased
-	if (cmd && character > 96 && character < 123 && shift) {
-		character -= 32; }
+	if (cmd && character > 96 && character < 123 && shift) 
+	{
+		character -= 32; 
+	}
 
 	bool found = false;
 
-	for (itor = hotkeys_.begin(); itor != hotkeys_.end(); ++itor) {
-		if (itor->get_character() != -1) {
-			if (character == itor->get_character()) {
-				if (ctrl == itor->get_ctrl()
+	for (itor = hotkeys_.begin (); itor != hotkeys_.end (); ++itor) 
+	{
+		if (itor->get_character () != -1) 
+		{
+			if (character == itor -> get_character()) 
+			{
+				if (ctrl == itor->get_ctrl ()
 						&& cmd == itor->get_cmd()
-						&& alt == itor->get_alt()) {
-					if (hotkey::is_scope_active(hotkey::get_hotkey_command(itor->get_command()).scope) && itor->active()) {
+						&& alt == itor->get_alt()) 
+				{
+					if (hotkey::is_scope_active (hotkey::get_hotkey_command (itor->get_command ()).scope) && itor->active ()) 
+					{
 						DBG_G << "Could match by character..." << "yes\n";
 						found = true;
 						break;
@@ -110,15 +119,21 @@ hotkey::hotkey_item& get_hotkey(int character, int keycode,
 						DBG_G << "Could match by character..." << "yes, but scope is inactive\n";
 					}
 				}
+				
 				DBG_G << "Could match by character..." << "but modifiers different\n";
 			}
-		} else if (itor->get_keycode() != -1) {
-			if (keycode == itor->get_keycode()) {
-				if (shift == itor->get_shift()
-						&& ctrl == itor->get_ctrl()
-						&& cmd  == itor->get_cmd()
-						&& alt  == itor->get_alt()) {
-					if (hotkey::is_scope_active(hotkey::get_hotkey_command(itor->get_command()).scope) && itor->active()) {
+		} else {
+			if (itor->get_keycode () != -1) 
+			{
+				if (keycode == itor->get_keycode ()) 
+				{
+					if (shift == itor->get_shift ()
+						&& ctrl == itor->get_ctrl ()
+						&& cmd  == itor->get_cmd ()
+						&& alt  == itor->get_alt ()) 
+					{
+						if (hotkey::is_scope_active (hotkey::get_hotkey_command (itor->get_command ()).scope) && itor->active ()) 
+						{
 						DBG_G << "Could match by keycode..." << "yes\n";
 						found = true;
 						break;
