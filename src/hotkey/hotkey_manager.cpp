@@ -20,27 +20,27 @@
 
 namespace hotkey {
 
-manager::manager()
-{
-	init();
-}
+	manager::manager ()
+	{
+		init();
+	}
 
-void manager::init()
-{
-	init_hotkey_commands();
-}
+	void manager::init ()
+	{
+		init_hotkey_commands ();
+	}
 
-void manager::wipe()
-{
-	clear_hotkey_commands();
-	clear_hotkeys();
-	delete_all_wml_hotkeys();
-}
+	void manager::wipe ()
+	{
+		clear_hotkey_commands ();
+		clear_hotkeys ();
+		delete_all_wml_hotkeys ();
+	}
 
-manager::~manager()
-{
-	wipe();
-}
+	manager::~manager ()
+	{
+		wipe ();
+	}
 
 
 }
