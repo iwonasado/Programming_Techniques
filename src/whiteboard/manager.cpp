@@ -906,407 +906,442 @@ static void print_to_chat(const std::string& title, const std::string& message)
 		}
 	}
 
-bool manager::save_recruit(const std::string& name, int side_num, const map_location& recruit_hex)
-{
-	bool created_planned_recruit = false;
+	bool manager::save_recruit (const std::string& name, int side_num, const map_location& recruit_hex)
+	{
+		bool created_planned_recruit = false;
 
-	if (active_ && !executing_actions_ && !resources::controller->is_linger_mode()) {
-		if (side_num != resources::screen->viewing_side())
+		if (active_ && !executing_actions_ && !resources::controller->is_linger_mode ()) 
 		{
-			LOG_WB <<"manager::save_recruit called for a different side than viewing side.\n";
-			created_planned_recruit = false;
+			if (side_num != resources::screen -> viewing_side ())
+			{
+				LOG_WB <<"manager::save_recruit called for a different side than viewing side.\n";
+				created_planned_recruit = false;
+			} else {
+				side_actions& sa = *viewer_actions ();
+				unit* recruiter;
+				{ wb::future_map raii;
+					recruiter = find_recruiter (side_num - 1, recruit_hex);
+				} // end planned unit map scope
+				assert (recruiter);
+				size_t turn = sa.get_turn_num_of (*recruiter);
+				sa.queue_recruit (turn, name, recruit_hex);
+				created_planned_recruit = true;
+
+				print_help_once	();
+			}
 		}
-		else
-		{
-			side_actions& sa = *viewer_actions();
-			unit* recruiter;
-			{ wb::future_map raii;
-				recruiter = find_recruiter(side_num-1,recruit_hex);
-			} // end planned unit map scope
-			assert(recruiter);
-			size_t turn = sa.get_turn_num_of(*recruiter);
-			sa.queue_recruit(turn,name,recruit_hex);
-			created_planned_recruit = true;
+		return created_planned_recruit;
+	}
 
-			print_help_once();
+	bool manager::save_recall (const unit& unit, int side_num, const map_location& recall_hex)
+	{
+		bool created_planned_recall = false;
+
+		if (active_ && !executing_actions_ && !resources::controller -> is_linger_mode ())
+		{
+			if (side_num != resources::screen -> viewing_side ())
+			{
+				LOG_WB <<"manager::save_recall called for a different side than viewing side.\n";
+				created_planned_recall = false;
+			} else {
+				side_actions& sa = *viewer_actions ();
+				size_t turn = sa.num_turns ();
+				if (turn > 0)
+				{
+					--turn;
+				}
+				sa.queue_recall (turn, unit, recall_hex);
+				created_planned_recall = true;
+				print_help_once ();
+			}
+		}
+		return created_planned_recall;
+	}
+
+	void manager::save_suppose_dead (unit& curr_unit, map_location const& loc)
+	{
+		if (active_ && !executing_actions_ && !resources::controller -> is_linger_mode ())
+		{
+			validate_viewer_actions ();
+			side_actions& sa = *viewer_actions ();
+			sa.queue_suppose_dead (sa.get_turn_num_of (curr_unit), curr_unit,loc);
 		}
 	}
-	return created_planned_recruit;
-}
 
-bool manager::save_recall(const unit& unit, int side_num, const map_location& recall_hex)
-{
-	bool created_planned_recall = false;
-
-	if (active_ && !executing_actions_ && !resources::controller->is_linger_mode())
+	void manager::contextual_execute ()
 	{
-		if (side_num != resources::screen->viewing_side())
+		validate_viewer_actions ();
+		if (can_enable_execution_hotkeys ())
 		{
-			LOG_WB <<"manager::save_recall called for a different side than viewing side.\n";
-			created_planned_recall = false;
-		}
-		else
-		{
-			side_actions& sa = *viewer_actions();
-			size_t turn = sa.num_turns();
-			if(turn > 0)
-				--turn;
-			sa.queue_recall(turn,unit,recall_hex);
-			created_planned_recall = true;
+			erase_temp_move ();
 
-			print_help_once();
+			//For exception-safety, this struct sets executing_actions_ to false on destruction.
+			variable_finalizer<bool> finally (executing_actions_, false);
+
+			action_ptr action;
+			side_actions::iterator it = viewer_actions () -> end ();
+			unit const* selected_unit = future_visible_unit (resources::controller -> get_mouse_handler_base ().get_selected_hex(), viewer_side ());
+			if (selected_unit &&
+				(it = viewer_actions () -> find_first_action_of (*selected_unit)) != viewer_actions () -> end ())
+			{
+				executing_actions_ = true;
+				viewer_actions () -> execute (it);
+			} else {
+				if (highlighter_ && (action = highlighter_ -> get_execute_target ()) &&
+				 (it = viewer_actions () -> get_position_of (action)) != viewer_actions () -> end ())
+				{
+					executing_actions_ = true;
+					viewer_actions () -> execute (it);
+				} else { //we already check above for viewer_actions()->empty()
+					executing_actions_ = true;
+					viewer_actions()->execute_next();
+				}
+			} //Finalizer struct sets executing_actions_ to false
 		}
 	}
-	return created_planned_recall;
-}
 
-void manager::save_suppose_dead(unit& curr_unit, map_location const& loc)
-{
-	if(active_ && !executing_actions_ && !resources::controller->is_linger_mode())
+	bool manager::allow_end_turn ()
 	{
-		validate_viewer_actions();
-		side_actions& sa = *viewer_actions();
-		sa.queue_suppose_dead(sa.get_turn_num_of(curr_unit),curr_unit,loc);
+		preparing_to_end_turn_ = true;
+		return execute_all_actions ();
 	}
-}
 
-void manager::contextual_execute()
-{
-	validate_viewer_actions();
-	if (can_enable_execution_hotkeys())
+	bool manager::execute_all_actions ()
 	{
-		erase_temp_move();
+		//exception-safety: finalizers set variables to false on destruction
+		//i.e. when method exits naturally or exception is thrown
+		variable_finalizer<bool> finalize_executing_actions (executing_actions_, false);
+		variable_finalizer<bool> finalize_executing_all_actions (executing_all_actions_, false);
 
-		//For exception-safety, this struct sets executing_actions_ to false on destruction.
-		variable_finalizer<bool> finally(executing_actions_, false);
-
-		action_ptr action;
-		side_actions::iterator it = viewer_actions()->end();
-		unit const* selected_unit = future_visible_unit(resources::controller->get_mouse_handler_base().get_selected_hex(), viewer_side());
-		if (selected_unit &&
-				(it = viewer_actions()->find_first_action_of(*selected_unit)) != viewer_actions()->end())
+		validate_viewer_actions ();
+		if (viewer_actions () -> empty () || viewer_actions () -> turn_size (0) == 0)
 		{
-			executing_actions_ = true;
-			viewer_actions()->execute(it);
+			//No actions to execute, job done.
+			return true;
 		}
-		else if (highlighter_ && (action = highlighter_->get_execute_target()) &&
-				 (it = viewer_actions()->get_position_of(action)) != viewer_actions()->end())
+
+		assert (can_enable_execution_hotkeys ());
+
+		erase_temp_move ();
+
+		// Build unit map once to ensure spent gold and other calculations are refreshed
+		set_planned_unit_map ();
+		assert (has_planned_unit_map ());
+		set_real_unit_map ();
+
+		executing_actions_ = true;
+		executing_all_actions_ = true;
+
+		side_actions_ptr sa = viewer_actions ();
+
+		if (resources::whiteboard -> has_planned_unit_map ())
 		{
-			executing_actions_ = true;
-			viewer_actions()->execute(it);
+			ERR_WB << "Modifying action queue while temp modifiers are applied!!!" << std::endl;
 		}
-		else //we already check above for viewer_actions()->empty()
+
+		//LOG_WB << "Before executing all actions, " << *sa << "\n";
+
+		while (sa->turn_begin (0) != sa -> turn_end (0))
 		{
-			executing_actions_ = true;
-			viewer_actions()->execute_next();
+			bool action_successful = sa -> execute (sa -> begin ());
+
+			// Interrupt on incomplete action
+			if (!action_successful) {
+				return false;
+			}
 		}
-	} //Finalizer struct sets executing_actions_ to false
-}
-
-bool manager::allow_end_turn()
-{
-	preparing_to_end_turn_ = true;
-	return execute_all_actions();
-}
-
-bool manager::execute_all_actions()
-{
-	//exception-safety: finalizers set variables to false on destruction
-	//i.e. when method exits naturally or exception is thrown
-	variable_finalizer<bool> finalize_executing_actions(executing_actions_, false);
-	variable_finalizer<bool> finalize_executing_all_actions(executing_all_actions_, false);
-
-	validate_viewer_actions();
-	if(viewer_actions()->empty() || viewer_actions()->turn_size(0) == 0)
-	{
-		//No actions to execute, job done.
 		return true;
 	}
 
-	assert(can_enable_execution_hotkeys());
-
-	erase_temp_move();
-
-	// Build unit map once to ensure spent gold and other calculations are refreshed
-	set_planned_unit_map();
-	assert(has_planned_unit_map());
-	set_real_unit_map();
-
-	executing_actions_ = true;
-	executing_all_actions_ = true;
-
-	side_actions_ptr sa = viewer_actions();
-
-	if (resources::whiteboard->has_planned_unit_map())
+	void manager::contextual_delete ()
 	{
-		ERR_WB << "Modifying action queue while temp modifiers are applied!!!" << std::endl;
-	}
-
-	//LOG_WB << "Before executing all actions, " << *sa << "\n";
-
-	while (sa->turn_begin(0) != sa->turn_end(0))
-	{
-		bool action_successful = sa->execute(sa->begin());
-
-		// Interrupt on incomplete action
-		if (!action_successful)
+		validate_viewer_actions ();
+		if (can_enable_modifier_hotkeys ()) 
 		{
-			return false;
+			erase_temp_move ();
+
+			action_ptr action;
+			side_actions::iterator it = viewer_actions () -> end ();
+			unit const* selected_unit = future_visible_unit (resources::controller -> get_mouse_handler_base ().get_selected_hex(), viewer_side ());
+			if (selected_unit && (it = viewer_actions () -> find_first_action_of (*selected_unit)) != viewer_actions () -> end()) 
+			{
+				///@todo Shouldn't it be "find_last_action_of" instead of "find_first_action_of" above?
+				viewer_actions () -> remove_action (it);
+				///@todo Shouldn't we probably deselect the unit at this point?
+			} else {
+				if (highlighter_ && (action = highlighter_ -> get_delete_target ()) && (it = viewer_actions () -> get_position_of(action)) != viewer_actions () -> end ()) 
+				{
+					viewer_actions () -> remove_action (it);
+					validate_viewer_actions ();
+					highlighter_ -> set_mouseover_hex (highlighter_->get_mouseover_hex ());
+					highlighter_ -> highlight ();
+				} else { //we already check above for viewer_actions()->empty()
+					it = (viewer_actions () -> end () - 1);
+					action = *it;
+					viewer_actions () -> remove_action (it);
+					validate_viewer_actions ();
+				}
+			}
 		}
 	}
-	return true;
-}
 
-void manager::contextual_delete()
-{
-	validate_viewer_actions();
-	if(can_enable_modifier_hotkeys()) {
-		erase_temp_move();
-
-		action_ptr action;
-		side_actions::iterator it = viewer_actions()->end();
-		unit const* selected_unit = future_visible_unit(resources::controller->get_mouse_handler_base().get_selected_hex(), viewer_side());
-		if(selected_unit && (it = viewer_actions()->find_first_action_of(*selected_unit)) != viewer_actions()->end()) {
-			///@todo Shouldn't it be "find_last_action_of" instead of "find_first_action_of" above?
-			viewer_actions()->remove_action(it);
-			///@todo Shouldn't we probably deselect the unit at this point?
-		} else if(highlighter_ && (action = highlighter_->get_delete_target()) && (it = viewer_actions()->get_position_of(action)) != viewer_actions()->end()) {
-			viewer_actions()->remove_action(it);
-			validate_viewer_actions();
-			highlighter_->set_mouseover_hex(highlighter_->get_mouseover_hex());
-			highlighter_->highlight();
-		} else { //we already check above for viewer_actions()->empty()
-			it = (viewer_actions()->end() - 1);
-			action = *it;
-			viewer_actions()->remove_action(it);
-			validate_viewer_actions();
-		}
-	}
-}
-
-void manager::contextual_bump_up_action()
-{
-	validate_viewer_actions();
-	if(can_enable_reorder_hotkeys()) {
-		action_ptr action = highlighter_->get_bump_target();
-		if(action) {
-			viewer_actions()->bump_earlier(viewer_actions()->get_position_of(action));
-			validate_viewer_actions(); // Redraw arrows
-		}
-	}
-}
-
-void manager::contextual_bump_down_action()
-{
-	validate_viewer_actions();
-	if(can_enable_reorder_hotkeys()) {
-		action_ptr action = highlighter_->get_bump_target();
-		if(action) {
-			viewer_actions()->bump_later(viewer_actions()->get_position_of(action));
-			validate_viewer_actions(); // Redraw arrows
-		}
-	}
-}
-
-bool manager::has_actions() const
-{
-	assert(resources::teams);
-	return wb::has_actions();
-}
-
-bool manager::unit_has_actions(unit const* unit) const
-{
-	assert(unit != NULL);
-	assert(resources::teams);
-	return viewer_actions()->unit_has_actions(*unit);
-}
-
-int manager::get_spent_gold_for(int side)
-{
-	if(wait_for_side_init_)
-		return 0;
-
-	return resources::teams->at(side - 1).get_side_actions()->get_gold_spent();
-}
-
-void manager::options_dlg()
-{
-	int v_side = viewer_side();
-
-	int selection = 0;
-
-	std::vector<team*> allies;
-	std::vector<std::string> options;
-	utils::string_map t_vars;
-
-	options.push_back(_("SHOW ALL allies’ plans"));
-	options.push_back(_("HIDE ALL allies’ plans"));
-
-	//populate list of networked allies
-	BOOST_FOREACH(team &t, *resources::teams)
+	void manager::contextual_bump_up_action ()
 	{
-		//Exclude enemies, AIs, and local players
-		if(t.is_enemy(v_side) || !t.is_network())
-			continue;
+		validate_viewer_actions ();
+		if (can_enable_reorder_hotkeys ()) 
+		{
+			action_ptr action = highlighter_ -> get_bump_target ();
+			if (action) 
+			{
+				viewer_actions () -> bump_earlier (viewer_actions () -> get_position_of (action));
+				validate_viewer_actions (); // Redraw arrows
+			}
+		}
+	}
 
-		allies.push_back(&t);
+	void manager::contextual_bump_down_action ()
+	{
+		validate_viewer_actions ();
+		if (can_enable_reorder_hotkeys ())
+		{
+			action_ptr action = highlighter_ -> get_bump_target ();
+			if (action)
+			{
+				viewer_actions () -> bump_later (viewer_actions () -> get_position_of (action));
+				validate_viewer_actions (); // Redraw arrows
+			}
+		}
+	}
 
-		t_vars["player"] = t.current_player();
-		size_t t_index = t.side()-1;
-		if(team_plans_hidden_[t_index])
-			options.push_back(vgettext("Show plans for $player", t_vars));
+	bool manager::has_actions () const
+	{
+		assert (resources::teams);
+		return wb::has_actions ();
+	}
+
+	bool manager::unit_has_actions (unit const* unit) const
+	{
+		assert (unit != NULL);
+		assert (resources::teams);
+		return viewer_actions () -> unit_has_actions (*unit);
+	}
+
+	int manager::get_spent_gold_for (int side)
+	{
+		if (wait_for_side_init_) {
+			return 0;
+		}
+
+		return resources::teams -> at (side - 1).get_side_actions () -> get_gold_spent ();
+	}
+
+	void manager::options_dlg ()
+	{
+		int v_side = viewer_side ();
+
+		int selection = 0;
+
+		std::vector<team*> allies;
+		std::vector<std::string> options;
+		utils::string_map t_vars;
+
+		options.push_back (_("SHOW ALL allies’ plans"));
+		options.push_back (_("HIDE ALL allies’ plans"));
+
+		//populate list of networked allies
+		BOOST_FOREACH (team &t, *resources::teams)
+		{
+			//Exclude enemies, AIs, and local players
+			if (t.is_enemy (v_side) || !t.is_network ()) {
+				continue;
+			}
+
+			allies.push_back (&t);
+
+			t_vars["player"] = t.current_player ();
+			size_t t_index = t.side () - 1;
+			if (team_plans_hidden_[t_index]) 
+			{
+				options.push_back (vgettext ("Show plans for $player", t_vars));
+			} else {
+				options.push_back (vgettext ("Hide plans for $player", t_vars));
+			}
+		}
+
+		gui2::tsimple_item_selector dlg ("", _("Whiteboard Options"), options);
+		dlg.show (resources::screen -> video ());
+		selection = dlg.selected_index ();
+
+		if (selection == -1) {
+			return;
+		}
+
+		switch (selection)
+		{
+		case 0:
+			BOOST_FOREACH (team* t, allies)
+				team_plans_hidden_[t->side()-1] = false;
+			break;
+		
+		case 1:
+			BOOST_FOREACH(team* t, allies)
+				team_plans_hidden_[t->side ()-1]=true;
+			break;
+			
+		default:
+			if (selection > 1)
+			{
+				size_t t_index = allies[selection-2] -> side ()-1;
+				//toggle ...
+				bool hidden = team_plans_hidden_[t_index];
+				team_plans_hidden_[t_index] = !hidden;
+			}
+			break;
+		}
+		update_plan_hiding();
+	}
+
+	void manager::set_planned_unit_map ()
+	{
+		if (!can_modify_game_state ()) 
+		{
+			LOG_WB << "Not building planned unit map: cannot modify game state now.\n";
+			return;
+		}
+		//any more than one reference means a lock on unit map was requested
+		if (!unit_map_lock_.unique ()) 
+		{
+			LOG_WB << "Not building planned unit map: unit map locked.\n";
+			return;
+		}
+		if (planned_unit_map_active_)
+		{
+			WRN_WB << "Not building planned unit map: already set." << std::endl;
+			return;
+		}
+
+		log_scope2 ("whiteboard", "Building planned unit map");
+		mapbuilder_.reset (new mapbuilder (*resources::units));
+		mapbuilder_ -> build_map ();
+
+		planned_unit_map_active_ = true;
+	}
+
+	void manager::set_real_unit_map ()
+	{
+		if (planned_unit_map_active_)
+		{
+			assert (!executing_actions_);
+			assert (!wait_for_side_init_);
+			if (mapbuilder_)
+			{
+				log_scope2 ("whiteboard", "Restoring regular unit map.");
+				mapbuilder_.reset ();
+			}
+			planned_unit_map_active_ = false;
+		}
 		else
-			options.push_back(vgettext("Hide plans for $player", t_vars));
-	}
-
-	gui2::tsimple_item_selector dlg("", _("Whiteboard Options"), options);
-	dlg.show(resources::screen->video());
-	selection = dlg.selected_index();
-
-	if(selection == -1)
-		return;
-
-	switch(selection)
-	{
-	case 0:
-		BOOST_FOREACH(team* t, allies)
-			team_plans_hidden_[t->side()-1]=false;
-		break;
-	case 1:
-		BOOST_FOREACH(team* t, allies)
-			team_plans_hidden_[t->side()-1]=true;
-		break;
-	default:
-		if(selection > 1)
 		{
-			size_t t_index = allies[selection-2]->side()-1;
-			//toggle ...
-			bool hidden = team_plans_hidden_[t_index];
-			team_plans_hidden_[t_index] = !hidden;
+			LOG_WB << "Not disabling planned unit map: already disabled.\n";
 		}
-		break;
-	}
-	update_plan_hiding();
-}
-
-void manager::set_planned_unit_map()
-{
-	if (!can_modify_game_state()) {
-		LOG_WB << "Not building planned unit map: cannot modify game state now.\n";
-		return;
-	}
-	//any more than one reference means a lock on unit map was requested
-	if(!unit_map_lock_.unique()) {
-		LOG_WB << "Not building planned unit map: unit map locked.\n";
-		return;
-	}
-	if (planned_unit_map_active_) {
-		WRN_WB << "Not building planned unit map: already set." << std::endl;
-		return;
 	}
 
-	log_scope2("whiteboard", "Building planned unit map");
-	mapbuilder_.reset(new mapbuilder(*resources::units));
-	mapbuilder_->build_map();
-
-	planned_unit_map_active_ = true;
-}
-
-void manager::set_real_unit_map()
-{
-	if (planned_unit_map_active_)
+	void manager::validate_actions_if_needed ()
 	{
-		assert(!executing_actions_);
-		assert(!wait_for_side_init_);
-		if(mapbuilder_)
-		{
-			log_scope2("whiteboard", "Restoring regular unit map.");
-			mapbuilder_.reset();
+		if (gamestate_mutated_)	{
+			validate_viewer_actions ();
 		}
-		planned_unit_map_active_ = false;
 	}
-	else
-	{
-		LOG_WB << "Not disabling planned unit map: already disabled.\n";
-	}
-}
 
-void manager::validate_actions_if_needed()
-{
-	if (gamestate_mutated_)	{
-		validate_viewer_actions();
-	}
-}
-
-future_map::future_map():
+	future_map::future_map ():
 		initial_planned_unit_map_(resources::whiteboard && resources::whiteboard->has_planned_unit_map())
-{
-	if (!resources::whiteboard)
-		return;
-	if (!initial_planned_unit_map_)
-		resources::whiteboard->set_planned_unit_map();
-	// check if if unit map was successfully applied
-	if (!resources::whiteboard->has_planned_unit_map()) {
-		DBG_WB << "Scoped future unit map failed to apply.\n";
+	{
+		if (!resources::whiteboard) {
+			return;
+		}
+		if (!initial_planned_unit_map_) {
+			resources::whiteboard -> set_planned_unit_map ();
+		}
+		// check if if unit map was successfully applied
+		if (!resources::whiteboard->has_planned_unit_map ()) 
+		{
+			DBG_WB << "Scoped future unit map failed to apply.\n";
+		}
 	}
-}
 
-future_map::~future_map()
-{
-	try {
-	if (!resources::whiteboard)
-		return;
-	if (!initial_planned_unit_map_ && resources::whiteboard->has_planned_unit_map())
-		resources::whiteboard->set_real_unit_map();
-	} catch (...) {}
-}
 
-future_map_if_active::future_map_if_active():
+	future_map::~future_map ()
+	{
+		try 
+		{
+			if (!resources::whiteboard) {
+				return;
+			}
+			if (!initial_planned_unit_map_ && resources::whiteboard->has_planned_unit_map()) 
+			{
+				resources::whiteboard->set_real_unit_map();
+			}
+		} catch (...) {}
+	}
+
+	future_map_if_active::future_map_if_active ():
 		initial_planned_unit_map_(resources::whiteboard && resources::whiteboard->has_planned_unit_map()),
 		whiteboard_active_(resources::whiteboard && resources::whiteboard->is_active())
-{
-	if (!resources::whiteboard)
-		return;
-	if (!whiteboard_active_)
-		return;
-	if (!initial_planned_unit_map_)
-		resources::whiteboard->set_planned_unit_map();
-	// check if if unit map was successfully applied
-	if (!resources::whiteboard->has_planned_unit_map()) {
-		DBG_WB << "Scoped future unit map failed to apply.\n";
-	}
-}
-
-future_map_if_active::~future_map_if_active()
-{
-	try {
-	if (!resources::whiteboard)
-		return;
-	if (!initial_planned_unit_map_ && resources::whiteboard->has_planned_unit_map())
-		resources::whiteboard->set_real_unit_map();
-	} catch (...) {}
-}
-
-
-real_map::real_map():
-		initial_planned_unit_map_(resources::whiteboard && resources::whiteboard->has_planned_unit_map()),
-		unit_map_lock_(resources::whiteboard ? resources::whiteboard->unit_map_lock_ : boost::shared_ptr<bool>(new bool(false)))
-{
-	if (!resources::whiteboard)
-		return;
-	if (initial_planned_unit_map_)
-		resources::whiteboard->set_real_unit_map();
-}
-
-real_map::~real_map()
-{
-	if (!resources::whiteboard)
-		return;
-	assert(!resources::whiteboard->has_planned_unit_map());
-	if (initial_planned_unit_map_)
 	{
-		resources::whiteboard->set_planned_unit_map();
+		if (!resources::whiteboard) {
+	 		return;
+	 	}
+		if (!whiteboard_active_) {
+			return;
+		}
+		if (!initial_planned_unit_map_) 
+		{
+			resources::whiteboard -> set_planned_unit_map ();
+		}
+		// check if if unit map was successfully applied
+		if (!resources::whiteboard->has_planned_unit_map()) 
+		{
+			DBG_WB << "Scoped future unit map failed to apply.\n";
+		}
 	}
-}
+
+	future_map_if_active::~future_map_if_active ()
+	{
+		try 
+		{
+			if (!resources::whiteboard) {
+				return;
+			}
+			if (!initial_planned_unit_map_ && resources::whiteboard -> has_planned_unit_map ())
+			{
+				resources::whiteboard -> set_real_unit_map ();
+			}
+		} catch (...) {}
+	}
+
+	real_map::real_map ():
+		initial_planned_unit_map_(resources::whiteboard && resources::whiteboard -> has_planned_unit_map ()),
+		unit_map_lock_(resources::whiteboard ? resources::whiteboard -> unit_map_lock_ : boost::shared_ptr<bool> (new bool(false)))
+	{
+		if (!resources::whiteboard) {
+			return;
+		}
+		if (initial_planned_unit_map_)
+		{
+			resources::whiteboard -> set_real_unit_map ();
+		}
+	}
+
+	real_map::~real_map ()
+	{
+		if (!resources::whiteboard) {
+			return;
+		}
+		assert (!resources::whiteboard -> has_planned_unit_map ());
+		if (initial_planned_unit_map_)
+		{
+			resources::whiteboard->set_planned_unit_map();
+		}
+	}
 
 } // end namespace wb
