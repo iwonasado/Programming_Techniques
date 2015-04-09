@@ -41,6 +41,4 @@ manager::~manager()
 {
 	wipe();
 }
-
-
 }
