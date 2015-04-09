@@ -22,7 +22,6 @@
 #include "recruit.hpp"
 #include "recall.hpp"
 #include "suppose_dead.hpp"
-
 #include "config.hpp"
 #include "game_board.hpp"
 #include "resources.hpp"
@@ -56,22 +55,29 @@ config action::to_config() const
 	return final_cfg;
 }
 
-/* static */
+// static 
 action_ptr action::from_config(config const& cfg, bool hidden)
 {
 	std::string type = cfg["type"];
 
-	try {
+	try 
+	{
 		if(type=="move")
+		{
 			return action_ptr(new move(cfg,hidden));
-		else if(type=="attack")
-			return action_ptr(new attack(cfg,hidden));
-		else if(type=="recruit")
-			return action_ptr(new recruit(cfg,hidden));
-		else if(type=="recall")
-			return action_ptr(new recall(cfg,hidden));
-		else if(type=="suppose_dead")
-			return action_ptr(new suppose_dead(cfg,hidden));
+		}	else if(type=="attack") 
+				 {
+					return action_ptr(new attack(cfg,hidden));
+				 }	else if(type=="recruit") 
+				 		 { 
+							return action_ptr(new recruit(cfg,hidden));
+						 } else if(type=="recall") 
+						 		{
+									return action_ptr(new recall(cfg,hidden));
+								}	else if(type=="suppose_dead")
+										 {
+											return action_ptr(new suppose_dead(cfg,hidden));
+										 }
 	} catch(action::ctor_err const&) {}
 
 	return action_ptr();
@@ -80,7 +86,9 @@ action_ptr action::from_config(config const& cfg, bool hidden)
 void action::hide()
 {
 	if(hidden_)
+	{
 		return;
+	}
 	hidden_ = true;
 	do_hide();
 }
@@ -88,7 +96,9 @@ void action::hide()
 void action::show()
 {
 	if(!hidden_)
+	{
 		return;
+	}
 	hidden_ = false;
 	do_show();
 }
@@ -107,7 +117,9 @@ action::action(config const& cfg, bool hidden)
 	int team_index_temp = cfg["team_index_"].to_int(-1); //default value: -1
 	if(team_index_temp < 0
 			|| team_index_temp >= static_cast<int>(resources::teams->size()))
+	{
 		throw ctor_err("action: Invalid team_index_");
+	}
 	team_index_ = team_index_temp;
 }
 
