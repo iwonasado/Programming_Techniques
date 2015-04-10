@@ -1,20 +1,18 @@
 /*
- Copyright (C) 2010 - 2015 by Gabriel Morin <gabrielmorin (at) gmail (dot) com>
- Part of the Battle for Wesnoth Project http://www.wesnoth.org
+* Copyright (C) 2010 - 2015 by Gabriel Morin <gabrielmorin (at) gmail (dot) com>
+* Part of the Battle for Wesnoth Project http://www.wesnoth.org
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the License, or
+*   (at your option) any later version.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY.
+*
+* See the COPYING file for more details.
+*/
 
- This program is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY.
-
- See the COPYING file for more details.
- */
-
-/**
- * @file
- */
+// @file
 
 #include "attack.hpp"
 
@@ -52,8 +50,9 @@ std::ostream& attack::print(std::ostream& s) const
 	return s;
 }
 
-attack::attack(size_t team_index, bool hidden, unit& u, const map_location& target_hex, int weapon_choice, const pathfind::marked_route& route,
-		arrow_ptr arrow, fake_unit_ptr fake_unit)
+attack::attack(size_t team_index, bool hidden, unit& u, const map_location& target_hex,
+ 			   int weapon_choice, const pathfind::marked_route& route,
+			   arrow_ptr arrow, fake_unit_ptr fake_unit)
 	: move(team_index, hidden, u, route, arrow, fake_unit),
 	target_hex_(target_hex),
 	weapon_choice_(weapon_choice),
@@ -64,19 +63,23 @@ attack::attack(size_t team_index, bool hidden, unit& u, const map_location& targ
 }
 
 attack::attack(config const& cfg, bool hidden)
-	: move(cfg,hidden)
-	, target_hex_(cfg.child("target_hex_")["x"],cfg.child("target_hex_")["y"])
+	: move(cfg, hidden)
+	, target_hex_(cfg.child("target_hex_")["x"], cfg.child("target_hex_")["y"])
 	, weapon_choice_(cfg["weapon_choice_"].to_int(-1)) //default value: -1
 	, attack_movement_cost_()
 	, temp_movement_subtracted_(0)
 {
 	// Validate target_hex
-	if(!tiles_adjacent(target_hex_,get_dest_hex()))
+	if(!tiles_adjacent(target_hex_, get_dest_hex()))
+	{
 		throw action::ctor_err("attack: Invalid target_hex_");
+	}
 
 	// Validate weapon_choice_
 	if(weapon_choice_ < 0 || weapon_choice_ >= static_cast<int>(get_unit()->attacks().size()))
+	{
 		throw action::ctor_err("attack: Invalid weapon_choice_");
+	}
 
 	// Construct attack_movement_cost_
 	attack_movement_cost_ = get_unit()->attacks()[weapon_choice_].movement_used();
@@ -99,12 +102,12 @@ void attack::accept(visitor& v)
 	v.visit(shared_from_this());
 }
 
-/* private */
+// private 
 void attack::invalidate()
 {
 	if(resources::screen)
 	{
-		//invalidate dest and target hex so attack indicator is properly cleared
+		// invalidate dest and target hex so attack indicator is properly cleared
 		resources::screen->invalidate(get_dest_hex());
 		resources::screen->invalidate(target_hex_);
 	}
@@ -112,9 +115,10 @@ void attack::invalidate()
 
 void attack::execute(bool& success, bool& complete)
 {
-	if(!valid()) {
+	if(!valid())
+	{
 		success = false;
-		//Setting complete to true signifies to side_actions to delete the planned action: nothing more to do with it.
+		// Setting complete to true signifies to side_actions to delete the planned action: nothing more to do with it.
 		complete = true;
 		return;
 	}
@@ -125,7 +129,8 @@ void attack::execute(bool& success, bool& complete)
 	{
 		bool m_success, m_complete;
 		move::execute(m_success,m_complete);
-		if(!m_success) {
+		if(!m_success)
+		{
 			//Move failed for some reason, so don't attack.
 			success = false;
 			complete = true;
@@ -142,7 +147,6 @@ void attack::execute(bool& success, bool& complete)
 	{
 		success = false;
 	}
-
 	success = true;
 }
 
@@ -152,20 +156,23 @@ void attack::apply_temp_modifier(unit_map& unit_map)
 	assert(get_unit());
 	unit& unit = *get_unit();
 	DBG_WB << unit.name() << " [" << unit.id()
-					<< "] has " << unit.attacks_left() << " attacks, decreasing by one" << "\n";
+						  << "] has " << unit.attacks_left()
+						  << " attacks, decreasing by one" << "\n";
 	assert(unit.attacks_left() > 0);
 	unit.set_attacks(unit.attacks_left() - 1);
 
-	//Calculate movement to subtract
+	// Calculate movement to subtract
 	temp_movement_subtracted_ = unit.movement_left() >= attack_movement_cost_ ? attack_movement_cost_ : 0 ;
 	DBG_WB << "Attack: Changing movement points for unit " << unit.name() << " [" << unit.id()
-				<< "] from " << unit.movement_left() << " to "
-				<< unit.movement_left() - temp_movement_subtracted_ << ".\n";
+		   << "] from " << unit.movement_left() << " to "
+		   << unit.movement_left() - temp_movement_subtracted_ << ".\n";
 	unit.set_movement(unit.movement_left() - temp_movement_subtracted_, true);
 
-	//Update status of fake unit (not undone by remove_temp_modifiers)
-	//@todo this contradicts the name "temp_modifiers"
-	if (fake_unit_) { //Attacks that are not attack-moves don't have fake units
+	// Update status of fake unit (not undone by remove_temp_modifiers)
+	// @todo this contradicts the name "temp_modifiers"
+
+	if (fake_unit_) // Attacks that are not attack-moves don't have fake units
+	{
 		fake_unit_->set_movement(unit.movement_left(), true);
 		fake_unit_->set_attacks(unit.attacks_left());
 	}
@@ -176,11 +183,13 @@ void attack::remove_temp_modifier(unit_map& unit_map)
 	assert(get_unit());
 	unit& unit = *get_unit();
 	DBG_WB << unit.name() << " [" << unit.id()
-					<< "] has " << unit.attacks_left() << " attacks, increasing by one" << "\n";
+						  << "] has " << unit.attacks_left()
+						  << " attacks, increasing by one" << "\n";
 	unit.set_attacks(unit.attacks_left() + 1);
-	DBG_WB << "Attack: Changing movement points for unit " << unit.name() << " [" << unit.id()
-				<< "] from " << unit.movement_left() << " to "
-				<< unit.movement_left() + temp_movement_subtracted_ << ".\n";
+	DBG_WB << "Attack: Changing movement points for unit " 
+		   << unit.name() << " [" << unit.id()
+		   << "] from " << unit.movement_left() << " to "
+		   << unit.movement_left() + temp_movement_subtracted_ << ".\n";
 	unit.set_movement(unit.movement_left() + temp_movement_subtracted_, true);
 	temp_movement_subtracted_ = 0;
 	move::remove_temp_modifier(unit_map);
@@ -188,50 +197,52 @@ void attack::remove_temp_modifier(unit_map& unit_map)
 
 void attack::draw_hex(const map_location& hex)
 {
-	if (hex == get_dest_hex() || hex == target_hex_) //draw attack indicator
+	if (hex == get_dest_hex() || hex == target_hex_) // draw attack indicator
 	{
-		//@todo: replace this by either the use of transparency + LAYER_ATTACK_INDICATOR,
-		//or a dedicated layer
+		// @todo: replace this by either the use of transparency + LAYER_ATTACK_INDICATOR,
+		// or a dedicated layer
 		const display::tdrawing_layer layer = display::LAYER_FOOTSTEPS;
 
-		//calculate direction (valid for both hexes)
+		// calculate direction (valid for both hexes)
 		std::string direction_text = map_location::write_direction(
 				get_dest_hex().get_relative_dir(target_hex_));
 
 #ifdef SDL_GPU
-		if (hex == get_dest_hex()) //add symbol to attacker hex
+		if (hex == get_dest_hex()) // add symbol to attacker hex
 		{
 			int xpos = resources::screen->get_location_x(get_dest_hex());
 			int ypos = resources::screen->get_location_y(get_dest_hex());
 
 			resources::screen->drawing_buffer_add(layer, get_dest_hex(), xpos, ypos,
-					image::get_texture("whiteboard/attack-indicator-src-" + direction_text + ".png", image::SCALED_TO_HEX));
-		}
-		else if (hex == target_hex_) //add symbol to defender hex
-		{
-			int xpos = resources::screen->get_location_x(target_hex_);
-			int ypos = resources::screen->get_location_y(target_hex_);
+												  image::get_texture("whiteboard/attack-indicator-src-" +
+												  direction_text + ".png", image::SCALED_TO_HEX));
+		}	else if (hex == target_hex_) // add symbol to defender hex
+				 {
+					int xpos = resources::screen->get_location_x(target_hex_);
+					int ypos = resources::screen->get_location_y(target_hex_);
 
-			resources::screen->drawing_buffer_add(layer, target_hex_, xpos, ypos,
-					image::get_texture("whiteboard/attack-indicator-dst-" + direction_text + ".png", image::SCALED_TO_HEX));
-		}
+					resources::screen->drawing_buffer_add(layer, target_hex_, xpos, ypos,
+														  image::get_texture("whiteboard/attack-indicator-dst-" +
+														  direction_text + ".png", image::SCALED_TO_HEX));
+				 }
 #else
-		if (hex == get_dest_hex()) //add symbol to attacker hex
+		if (hex == get_dest_hex()) // add symbol to attacker hex
 		{
 			int xpos = resources::screen->get_location_x(get_dest_hex());
 			int ypos = resources::screen->get_location_y(get_dest_hex());
 
 			resources::screen->drawing_buffer_add(layer, get_dest_hex(), xpos, ypos,
-					image::get_image("whiteboard/attack-indicator-src-" + direction_text + ".png", image::SCALED_TO_HEX));
-		}
-		else if (hex == target_hex_) //add symbol to defender hex
-		{
-			int xpos = resources::screen->get_location_x(target_hex_);
-			int ypos = resources::screen->get_location_y(target_hex_);
+												  image::get_image("whiteboard/attack-indicator-src-" +
+												  direction_text + ".png", image::SCALED_TO_HEX));
+		}	else if (hex == target_hex_) // add symbol to defender hex
+				 {
+					int xpos = resources::screen->get_location_x(target_hex_);
+					int ypos = resources::screen->get_location_y(target_hex_);
 
-			resources::screen->drawing_buffer_add(layer, target_hex_, xpos, ypos,
-					image::get_image("whiteboard/attack-indicator-dst-" + direction_text + ".png", image::SCALED_TO_HEX));
-		}
+					resources::screen->drawing_buffer_add(layer, target_hex_, xpos, ypos,
+														  image::get_image("whiteboard/attack-indicator-dst-" +
+														  direction_text + ".png", image::SCALED_TO_HEX));
+				 }
 #endif
 	}
 }
@@ -245,26 +256,31 @@ void attack::redraw()
 action::error attack::check_validity() const
 {
 	// Verify that the unit that planned this attack exists
-	if(!get_unit()) {
+	if(!get_unit())
+	{
 		return NO_UNIT;
 	}
 	// Verify that the target hex is still valid
-	if(!target_hex_.valid()) {
+	if(!target_hex_.valid())
+	{
 		return INVALID_LOCATION;
 	}
 	// Verify that the target hex isn't empty
-	if(resources::units->find(target_hex_) == resources::units->end()){
+	if(resources::units->find(target_hex_) == resources::units->end())
+	{
 		return NO_TARGET;
 	}
 	// Verify that the attacking unit has attacks left
-	if(get_unit()->attacks_left() <= 0) {
+	if(get_unit()->attacks_left() <= 0)
+	{
 		return NO_ATTACK_LEFT;
 	}
 	// Verify that the attacker and target are enemies
-	if(!(*resources::teams)[get_unit()->side() - 1].is_enemy(resources::units->find(target_hex_)->side())){
+	if(!(*resources::teams)[get_unit()->side() - 1].is_enemy(resources::units->find(target_hex_)->side()))
+	{
 		return NOT_AN_ENEMY;
 	}
-	//@todo: (maybe) verify that the target hex contains the same unit that before,
+	// @todo: (maybe) verify that the target hex contains the same unit that before,
 	// comparing for example the unit ID
 
 	return move::check_validity();
@@ -276,8 +292,8 @@ config attack::to_config() const
 
 	final_cfg["type"] = "attack";
 	final_cfg["weapon_choice_"] = weapon_choice_;
-//	final_cfg["attack_movement_cost_"] = attack_movement_cost_; //Unnecessary
-//	final_cfg["temp_movement_subtracted_"] = temp_movement_subtracted_; //Unnecessary
+	// final_cfg["attack_movement_cost_"] = attack_movement_cost_; //Unnecessary
+	// final_cfg["temp_movement_subtracted_"] = temp_movement_subtracted_; //Unnecessary
 
 	config target_hex_cfg;
 	target_hex_cfg["x"]=target_hex_.x;
