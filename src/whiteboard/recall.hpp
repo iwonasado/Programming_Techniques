@@ -25,71 +25,71 @@
 namespace wb
 {
 
-class recall: public action
-{
-public:
-	recall(size_t team_index, bool hidden, const unit& unit, const map_location& recall_hex);
-	recall(config const&, bool hidden); // For deserialization
-	virtual ~recall();
+	class recall: public action
+	{
+	public:
+		recall(size_t team_index, bool hidden, const unit& unit, const map_location& recall_hex);
+		recall(config const&, bool hidden); // For deserialization
+		virtual ~recall();
 
-	virtual std::ostream& print(std::ostream& s) const;
+		virtual std::ostream& print(std::ostream& s) const;
 
-	virtual void accept(visitor& v);
+		virtual void accept(visitor& v);
 
-	virtual void execute(bool& success, bool& complete);
+		virtual void execute(bool& success, bool& complete);
 
-	/**
-	 * Check the validity of the action.
-	 *
-	 * @return the error preventing the action from being executed.
-	 * @retval OK if there isn't any error (the action can be executed.)
-	 */
-	virtual error check_validity() const;
+		/**
+		 * Check the validity of the action.
+		 *
+		 * @return the error preventing the action from being executed.
+		 * @retval OK if there isn't any error (the action can be executed.)
+		 */
+		virtual error check_validity() const;
 
-	/** Applies temporarily the result of this action to the specified unit map. */
-	virtual void apply_temp_modifier(unit_map& unit_map);
-	/** Removes the result of this action from the specified unit map. */
-	virtual void remove_temp_modifier(unit_map& unit_map);
+		/** Applies temporarily the result of this action to the specified unit map. */
+		virtual void apply_temp_modifier(unit_map& unit_map);
+		/** Removes the result of this action from the specified unit map. */
+		virtual void remove_temp_modifier(unit_map& unit_map);
 
-	/** Gets called by display when drawing a hex, to allow actions to draw to the screen. */
-	virtual void draw_hex(const map_location& hex);
-	/** Redrawing function, called each time the action situation might have changed. */
-	virtual void redraw();
+		/** Gets called by display when drawing a hex, to allow actions to draw to the screen. */
+		virtual void draw_hex(const map_location& hex);
+		/** Redrawing function, called each time the action situation might have changed. */
+		virtual void redraw();
 
-	/**
-	 * Indicates whether this hex is the preferred hex to draw the numbering for this action.
-	 */
-	virtual map_location get_numbering_hex() const { return recall_hex_; }
+		/**
+		 * Indicates whether this hex is the preferred hex to draw the numbering for this action.
+		 */
+		virtual map_location get_numbering_hex() const { return recall_hex_; }
 
-	/** @return pointer to a copy of the recall unit. */
-	virtual unit_ptr get_unit() const { return temp_unit_; }
-	/** @return pointer to the fake unit used only for visuals */
-	virtual fake_unit_ptr get_fake_unit() { return fake_unit_; }
+		/** @return pointer to a copy of the recall unit. */
+		virtual unit_ptr get_unit() const { return temp_unit_; }
+		/** @return pointer to the fake unit used only for visuals */
+		virtual fake_unit_ptr get_fake_unit() { return fake_unit_; }
 
-	map_location const get_recall_hex() const { return recall_hex_; }
+		map_location const get_recall_hex() const { return recall_hex_; }
 
-	virtual config to_config() const;
+		virtual config to_config() const;
 
-protected:
+	protected:
 
-	boost::shared_ptr<recall> shared_from_this() {
-		return boost::static_pointer_cast<recall>(action::shared_from_this());
+		boost::shared_ptr<recall> shared_from_this() {
+			return boost::static_pointer_cast<recall>(action::shared_from_this());
+		}
+
+	private:
+		void init();
+
+		virtual void do_hide();
+		virtual void do_show();
+
+		unit_ptr temp_unit_;
+		map_location recall_hex_;
+		fake_unit_ptr fake_unit_;
+	};
+
+	std::ostream& operator<<(std::ostream& s, recall_ptr recall);
+	std::ostream& operator<<(std::ostream& s, recall_const_ptr recall);
+
 	}
-
-private:
-	void init();
-
-	virtual void do_hide();
-	virtual void do_show();
-
-	unit_ptr temp_unit_;
-	map_location recall_hex_;
-	fake_unit_ptr fake_unit_;
-};
-
-std::ostream& operator<<(std::ostream& s, recall_ptr recall);
-std::ostream& operator<<(std::ostream& s, recall_const_ptr recall);
-
-}
 
 #endif /* WB_RECALL_HPP_ */
