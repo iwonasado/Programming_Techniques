@@ -65,13 +65,20 @@ namespace wb
 			{
 				out << "\n    (empty)";
 			}
+			else
+			{
+				//Nothing to do.
+			}
 		}
 
 		if(side_actions.empty()) 
 		{
 			out << " (empty)";
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		return out;
 	}
 
@@ -85,6 +92,10 @@ namespace wb
 	{
 		if(begin+1 >= end) {
 			return begin;
+		}
+		else
+		{
+			//Nothing to do.
 		}
 		size_t mid = (begin+end) / 2;
 		if(it < turn_beginnings_[mid]) 
@@ -143,7 +154,10 @@ namespace wb
 		{
 			return queue(turn, action);
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		iterator res = insert(turn_begin(turn), action);
 		if(res != end()) 
 		{
@@ -154,6 +168,14 @@ namespace wb
 			{
 				turn_beginnings_.front() = res;
 			}
+			else
+			{
+				//Nothing to do.
+			}
+		}
+		else
+		{
+			//Nothing to do.
 		}
 		return res;
 	}
@@ -169,10 +191,18 @@ namespace wb
 		{
 			return end();
 		}
+		else
+		{
+			//Nothing to do.
+		}
 		if(first) 
 		{
 			// If we are inserting before the first action, then the inserted action should became the first of turn 0.
 			turn_beginnings_.front() = begin();
+		}
+		else
+		{
+			//Nothing to do.
 		}
 		return res.first;
 	}
@@ -193,10 +223,17 @@ namespace wb
 		{
 			return end();
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		if(future_only) {
 			// No action are planned for the current turn but we are planning an action for turn 1 (the next turn).
 			turn_beginnings_.push_back(res.first);
+		}
+		else
+		{
+			//Nothing to do.
 		}
 		if(turn_num >= num_turns()) 
 		{
@@ -208,6 +245,10 @@ namespace wb
 			{
 				// We are planning the first action of the current turn while others actions are planned in the future.
 				turn_beginnings_.front() = res.first;
+			}
+			else
+			{
+				//Nothing to do.
 			}
 		}	
 		return res.first;
@@ -272,7 +313,10 @@ namespace wb
 				}
 			}
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		//erase!
 		return actions_.erase(position);
 	}
@@ -283,6 +327,10 @@ namespace wb
 		if(first>=last) 
 		{
 			return last;
+		}
+		else
+		{
+			//Nothing to do.
 		}
 		for(iterator it = last-1; it>first; --it) 
 		{
@@ -314,7 +362,10 @@ namespace wb
 		{
 			return;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		std::vector<int>& numbers_to_draw = result.numbers_to_draw;
 		std::vector<size_t>& team_numbers = result.team_numbers;
 		int& main_number = result.main_number;
@@ -337,15 +388,31 @@ namespace wb
 					{
 						main_number = index;
 					}
-
+					else
+					{
+						//Nothing to do.
+					}
 					BOOST_FOREACH(weak_action_ptr action, hlighter->get_secondary_highlights()) 
 					{
 						if(action.lock() == *it) 
 						{
 							secondary_numbers.insert(index);
 						}
+						else
+						{
+							//Nothing to do.
+						}
 					}
 				}
+				else
+				{
+					//Nothing to do.
+				}
+			
+			}
+			else
+			{
+				//Nothing to do.
 			}
 		}
 	}
@@ -368,12 +435,18 @@ namespace wb
 		{
 			ERR_WB << "Modifying action queue while temp modifiers are applied!!!" << std::endl;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		if(actions_.empty() || position == actions_.end()) 
 		{
 			return false;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		assert(position < turn_end(0)); //can't execute actions from future turns
 
 		LOG_WB << "Before execution, " << *this << "\n";
@@ -386,7 +459,10 @@ namespace wb
 			synced_erase(position);
 			return true;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		bool action_successful;
 		// Determines whether action should be deleted. Interrupted moves return action_complete == false.
 		bool action_complete;
@@ -404,7 +480,10 @@ namespace wb
 		{
 			resources::undo_stack->clear();
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		std::stringstream ss;
 		ss << "After " << (action_successful? "successful": "failed") << " execution ";
 		if(action_complete) 
@@ -434,7 +513,10 @@ namespace wb
 		{
 			return;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		hidden_ = true;
 
 		BOOST_FOREACH(action_ptr act, *this) 
@@ -448,7 +530,10 @@ namespace wb
 		{
 			return;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		hidden_ = false;
 
 		BOOST_FOREACH(action_ptr act, *this) 
@@ -463,6 +548,10 @@ namespace wb
 		{
 			ERR_WB << "Modifying action queue while temp modifiers are applied!!!" << std::endl;
 		}
+		else
+		{
+			//Nothing to do.
+		}
 		iterator valid_position = synced_insert(position, action);
 		LOG_WB << "Inserted into turn #" << get_turn(valid_position) << " at position #"
 				<< actions_.position_in_turn(valid_position) << " : " << action <<"\n";
@@ -475,6 +564,10 @@ namespace wb
 		if(resources::whiteboard->has_planned_unit_map()) 
 		{
 			ERR_WB << "Modifying action queue while temp modifiers are applied!!!" << std::endl;
+		}
+		else
+		{
+			//Nothing to do.
 		}
 		iterator result = synced_enqueue(turn_num, action);
 		LOG_WB << "Queue into turn #" << turn_num << " : " << action <<"\n";
@@ -539,11 +632,19 @@ namespace wb
 						{
 							return; //backup leader but he moves before us, refuse bump
 						}
+						else
+						{
+							//Nothing to do.
+						}
 					} 
 					else 
 					{
 						return; //no backup leader, refuse bump
 					}
+				}
+				else
+				{
+					//Nothing to do.
 				}
 				valid_ = true;
 			}
@@ -557,7 +658,10 @@ namespace wb
 		{
 			ERR_WB << "Modifying action queue while temp modifiers are applied!!!" << std::endl;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		assert(position <= end());
 
 		//Don't allow bumping the very first action any earlier, of course.
@@ -566,7 +670,10 @@ namespace wb
 		{
 			return end();
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		side_actions::iterator previous = position - 1;
 
 		//Verify we're not moving an action out-of-order compared to other action of the same unit
@@ -585,8 +692,15 @@ namespace wb
 			{
 				return end();
 			}
+			else
+			{
+				//Nothing to do.
+			}
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		LOG_WB << "Before bumping earlier, " << *this << "\n";
 
 		int turn_number = get_turn(position);
@@ -614,10 +728,18 @@ namespace wb
 		{
 			return end();
 		}
+		else
+		{
+			//Nothing to do.
+		}
 		position = bump_earlier(position);
 		if(position == end()) 
 		{
 			return end();
+		}
+		else
+		{
+			//Nothing to do.
 		}
 		return position + 1;
 	}
@@ -628,7 +750,10 @@ namespace wb
 		{
 			ERR_WB << "Modifying action queue while temp modifiers are applied!!!" << std::endl;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		assert(position < end());
 
 		LOG_WB << "Erasing action at turn #" << get_turn(position) << " position #" << actions_.position_in_turn(position) << "\n";
@@ -639,7 +764,10 @@ namespace wb
 		{
 			resources::whiteboard->validate_viewer_actions();
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		return position;
 	}
 
@@ -697,6 +825,10 @@ namespace wb
 		if(itor == end()) 
 		{
 			return 0;
+		}
+		else
+		{
+			//Nothing to do.
 		}
 		return get_turn(itor);
 	}
@@ -804,12 +936,20 @@ namespace wb
 				ERR_WB << "side_actions::execute_network_command(): received invalid action data!" << std::endl;
 				return;
 			}
+			else
+			{
+				//Nothing to do.
+			}
 
 			iterator itor = safe_insert(turn, pos, act);
 			if(itor >= end()) 
 			{
 				ERR_WB << "side_actions::execute_network_command(): received invalid insertion position!" << std::endl;
 				return;
+			}
+			else
+			{
+				//Nothing to do.
 			}
 
 			LOG_WB << "Command received: action inserted on turn #" << turn << ", position #" << pos << ": " << act << "\n";
@@ -823,27 +963,43 @@ namespace wb
 		} 
 		else
 		{ 
-			if(type=="replace") {
-			size_t turn = cmd["turn"].to_int();
-			size_t pos = cmd["pos"].to_int();
-			action_ptr act = action::from_config(cmd.child("action"), hidden_);
-			if(!act) {
-				ERR_WB << "side_actions::execute_network_command(): received invalid action data!" << std::endl;
-				return;
-			}
+			if(type=="replace") 
+			{
+				size_t turn = cmd["turn"].to_int();
+				size_t pos = cmd["pos"].to_int();
+				action_ptr act = action::from_config(cmd.child("action"), hidden_);
+				if(!act) 
+				{
+					ERR_WB << "side_actions::execute_network_command(): received invalid action data!" << std::endl;
+					return;
+				}
+				else
+				{
+					//Nothing to do.
+				}
 
-			iterator itor = turn_begin(turn) + pos;
-			if(itor >= end() || get_turn(itor) != turn) {
-				ERR_WB << "side_actions::execute_network_command(): received invalid pos!" << std::endl;
-				return;
-			}
+				iterator itor = turn_begin(turn) + pos;
+				if(itor >= end() || get_turn(itor) != turn) 
+				{
+					ERR_WB << "side_actions::execute_network_command(): received invalid pos!" << std::endl;
+					return;
+				}
+				else
+				{
+					//Nothing to do.
+				}
 
-			if(!actions_.replace(itor, act)){
-				ERR_WB << "side_actions::execute_network_command(): replace failed!" << std::endl;
-				return;
-			}
+				if(!actions_.replace(itor, act))
+				{
+					ERR_WB << "side_actions::execute_network_command(): replace failed!" << std::endl;
+					return;
+				}
+				else
+				{
+					//Nothing to do.
+				}
 
-			LOG_WB << "Command received: action replaced on turn #" << turn << ", position #" << pos << ": " << act << "\n";
+				LOG_WB << "Command received: action replaced on turn #" << turn << ", position #" << pos << ": " << act << "\n";
 			} 
 			else 
 			{			
@@ -857,6 +1013,10 @@ namespace wb
 					{
 						ERR_WB << "side_actions::execute_network_command(): received invalid pos!" << std::endl;
 						return;
+					}
+					else
+					{
+						//Nothing to do.
 					}
 
 					itor = safe_erase(itor);
@@ -881,6 +1041,11 @@ namespace wb
 						{
 							ERR_WB << "side_actions::execute_network_command(): received invalid pos!" << std::endl;
 							return;
+						}
+
+						else
+						{
+							//Nothing to do.
 						}
 
 						action_ptr first_action = *itor;
@@ -914,12 +1079,14 @@ namespace wb
 								ERR_WB << "side_actions::execute_network_command(): received invalid type!" << std::endl;
 								return;
 							}
-
-						resources::whiteboard->validate_viewer_actions();
+						}
 					}
+					
 				}
 			}
 		}
+		resources::whiteboard->validate_viewer_actions();
+	}
 	side_actions::net_cmd side_actions::make_net_cmd_insert(size_t turn_num, size_t pos, action_const_ptr act) const
 	{
 		net_cmd result;
@@ -996,6 +1163,11 @@ namespace wb
 			{
 				lazy_units.insert(u);
 			}
+			else
+			{
+				//Nothing to do.
+			}
+
 		}
 
 		//push their plans back one turn
@@ -1011,6 +1183,11 @@ namespace wb
 				safe_insert(get_turn(itor)+1, 0, act);
 				itor = actions_.erase(itor);
 			}
+			else
+			{
+				//Nothing to do.
+			}
+
 		}
 
 		//push any remaining first-turn plans into the second turn
