@@ -784,6 +784,11 @@ namespace wb
 			{
 				first = chrono_it;
 			}
+			else
+			{
+				//Nothing to do.
+			}
+
 		}
 		return first;
 	}
@@ -799,6 +804,11 @@ namespace wb
 			{
 				first = chrono_it;
 			}
+			else
+			{
+				//Nothing to do.
+			}
+
 		}
 		return first;
 	}
