@@ -82,11 +82,19 @@ namespace wb
 				temp_unit_.reset(new class unit(*recall_unit)); //TODO: is it necessary to make a copy?
 				break;
 			}
+			else
+			{
+				//Nothing to do.			
+			}
 		}
-		if(!temp_unit_.get()) {
+		if(!temp_unit_.get()) 
+		{
 			throw action::ctor_err("recall: Invalid underlying_id");
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		fake_unit_.reset(unit_ptr(new class unit(*temp_unit_))); //makes copy of temp_unit_
 
 		this->init();
@@ -137,6 +145,10 @@ namespace wb
 		{
 			current_team.get_side_actions()->change_gold_spent_by(cost);
 		}
+		else
+		{
+			//Nothing to do.
+		}
 		success = complete = result;
 	}
 
@@ -158,7 +170,10 @@ namespace wb
 		{
 			cost = it->recall_cost();
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		// Temporarily insert unit into unit_map
 		//unit map takes ownership of temp_unit
 		unit_map.insert(temp_unit_);
@@ -200,6 +215,10 @@ namespace wb
 			resources::screen->draw_text_in_hex(hex, display::LAYER_ACTIONS_NUMBERING,
 							number_text.str(), font_size, color, x_offset, y_offset);
 		}
+		else
+		{
+			//Nothing to do.
+		}
 	}
 
 	void recall::redraw()
@@ -214,22 +233,37 @@ namespace wb
 		{
 			return LOCATION_OCCUPIED;
 		}
+		else
+		{
+			//Nothing to do.
+		}
 		//Check that unit to recall is still in side's recall list
 		if( !(*resources::teams)[team_index()].recall_list().find_if_matches_id(temp_unit_->id()) ) 
 		{
 			return UNIT_UNAVAILABLE;
+		}
+		else
+		{
+			//Nothing to do.
 		}
 		//Check that there is still enough gold to recall this unit
 		if((*resources::teams)[team_index()].recall_cost() > (*resources::teams)[team_index()].gold()) 
 		{
 			return NOT_ENOUGH_GOLD;
 		}
+		else
+		{
+			//Nothing to do.
+		}
 		//Check that there is a leader available to recall this unit
 		if(!find_recruiter(team_index(),get_recall_hex()))
 		{
 			return NO_LEADER;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		return OK;
 	}
 
