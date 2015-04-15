@@ -74,8 +74,13 @@ namespace wb
 	{
 		// Validate unit_name_
 		if(!unit_types.find(unit_name_))
+		{
 			throw action::ctor_err("recruit: Invalid recruit unit type");
-
+		}
+		else
+		{
+			//Nothing to do.
+		}
 		// Construct temp_unit_ and fake_unit_
 		temp_unit_ = create_corresponding_unit(); //auto-ptr ownership transfer
 		fake_unit_.reset(unit_ptr (new unit(*temp_unit_))), //temp_unit_ copied into new fake_unit
@@ -115,6 +120,10 @@ namespace wb
 		if (!result) 
 		{
 			resources::teams->at(team_index()).get_side_actions()->change_gold_spent_by(cost_);
+		}
+		else
+		{
+			//Nothing to do.
 		}
 		success = complete = result;
 	}
@@ -159,6 +168,10 @@ namespace wb
 			resources::screen->draw_text_in_hex(hex, display::LAYER_ACTIONS_NUMBERING,
 							number_text.str(), font_size, color, x_offset, y_offset);
 		}
+		else
+		{
+			//Nothing to do.
+		}
 	}
 
 	void recruit::redraw()
@@ -187,23 +200,38 @@ namespace wb
 		{
 			return LOCATION_OCCUPIED;
 		}
+		else
+		{
+			//Nothing to do.
+		}
 		//Check that unit to recruit is still in side's recruit list
 		const std::set<std::string>& recruits = (*resources::teams)[team_index()].recruits();
 		if(recruits.find(unit_name_) == recruits.end())
 		{
 			return UNIT_UNAVAILABLE;
 		}
+		else
+		{
+			//Nothing to do.
+		}
 		//Check that there is still enough gold to recruit this unit
 		if(temp_unit_->cost() > (*resources::teams)[team_index()].gold()) 
 		{
 			return NOT_ENOUGH_GOLD;
+		}
+		else
+		{
+			//Nothing to do.
 		}
 		//Check that there is a leader available to recruit this unit
 		if(!find_recruiter(team_index(),get_recruit_hex())) 
 		{
 			return NO_LEADER;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		return OK;
 	}
 
