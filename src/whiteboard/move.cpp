@@ -83,8 +83,13 @@ namespace wb {
 		assert(!route_->steps.empty());
 
 		if(hidden)
+		{
 			fake_unit_->set_hidden(true);
-
+		}
+		else
+		{
+			//Nothing to do.
+		}
 		this->init();
 	}
 
@@ -105,13 +110,25 @@ namespace wb {
 		// Construct and validate unit_
 		unit_map::iterator unit_itor = resources::units->find(cfg["unit_"]);
 		if(unit_itor == resources::units->end())
+		{	
 			throw action::ctor_err("move: Invalid underlying_id");
+		}
+		else
+		{
+			//Nothing to do.
+		}		
 		unit_underlying_id_ = unit_itor->underlying_id();
 
 		// Construct and validate route_
 		config const& route_cfg = cfg.child("route_");
 		if(!route_cfg)
+		{
 			throw action::ctor_err("move: Invalid route_");
+		}
+		else
+		{
+			//Nothing to do.
+		}
 		route_->move_cost = route_cfg["move_cost"];
 		BOOST_FOREACH(config const& loc_cfg, route_cfg.child_range("step")) 
 		{
@@ -129,8 +146,13 @@ namespace wb {
 		// Validate route_ some more
 		std::vector<map_location> const& steps = route_->steps;
 		if(steps.empty())
+		{
 			throw action::ctor_err("move: Invalid route_");
-
+		}
+		else
+		{
+			//Nothing to do.
+		}
 		// Construct arrow_
 		arrow_->set_color(team::get_side_color_index(side_number()));
 		arrow_->set_style(arrow::STYLE_STANDARD);
@@ -139,7 +161,9 @@ namespace wb {
 		// Construct fake_unit_
 		fake_unit_ = fake_unit_ptr( unit_ptr(new unit(*get_unit())) , resources::fake_units );
 		if(hidden)
+		{
 			fake_unit_->set_hidden(true);
+		}		
 		fake_unit_->anim_comp().set_ghosted(true);
 		unit_display::move_unit(route_->steps, fake_unit_.get_unit_ptr(), false); //get facing right
 		fake_unit_->set_location(route_->steps.back());
@@ -158,6 +182,10 @@ namespace wb {
 		{
 			fake_unit_->anim_comp().set_ghosted(true);
 		}
+		else
+		{
+			//Nothing to do.
+		}
 		side_actions_ptr side_actions = resources::teams->at(team_index()).get_side_actions();
 		side_actions::iterator action = side_actions->find_last_action_of(*(get_unit()));
 		if (action != side_actions->end())
@@ -165,10 +193,23 @@ namespace wb {
 			if (move_ptr move = boost::dynamic_pointer_cast<class move>(*action))
 			{
 				if (move->fake_unit_)
+				{
 					move->fake_unit_->anim_comp().set_disabled_ghosted(true);
+				}
+				else
+				{
+					//Nothing to do.
+				}			
+			}
+			else
+			{
+				//Nothing to do.
 			}
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		this->calculate_move_cost();
 
 		// Initialize arrow_brightness_ and arrow_texture_ using arrow_->style_
@@ -200,6 +241,10 @@ namespace wb {
 						arrow_brightness_ = ARROW_BRIGHTNESS_STANDARD;
 						arrow_texture_ = ARROW_TEXTURE_INVALID;
 					}
+					else
+					{
+						//Nothing to do.
+					}
 				}
 			}
 		}
@@ -219,11 +264,18 @@ namespace wb {
 			complete = true;
 			return;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		if(get_source_hex() == get_dest_hex()) {
 			//zero-hex move, used by attack subclass
 			success = complete = true;
 			return;
+		}
+		else
+		{
+			//Nothing to do.
 		}
 
 		LOG_WB << "Executing: " << shared_from_this() << "\n";
@@ -284,6 +336,10 @@ namespace wb {
 						// Of course, "better" would need to be verified.
 						arrow_->set_path(route_->steps);
 					}
+				}		
+				else
+				{
+					//Nothing to do.
 				}
 			}
 		}
@@ -335,7 +391,14 @@ namespace wb {
 							*resources::teams, resources::gameboard->map());
 		new_plain_route = pathfind::a_star_search(source_hex,
 							dest_hex, 10000, &path_calc, resources::gameboard->map().w(), resources::gameboard->map().h());
-		if (new_plain_route.move_cost >= path_calc.getNoPathValue()) return false;
+		if (new_plain_route.move_cost >= path_calc.getNoPathValue()) 
+		{
+			return false;
+		}
+		else
+		{
+			//Nothing to do.
+		}		
 		route_.reset(new pathfind::marked_route(pathfind::mark_route(new_plain_route)));
 		calculate_move_cost();
 		return true;
@@ -344,8 +407,13 @@ namespace wb {
 	void move::apply_temp_modifier(unit_map& unit_map)
 	{
 		if (get_source_hex() == get_dest_hex())
+		{
 			return; //zero-hex move, used by attack subclass
-
+		}
+		else
+		{
+			//Nothing to do.
+		}
 		// Safety: Make sure the old temporary_unit_mover (if any) is destroyed
 		// before creating a new one.
 		mover_.reset();
@@ -379,8 +447,13 @@ namespace wb {
 	void move::remove_temp_modifier(unit_map&)
 	{
 		if (get_source_hex() == get_dest_hex())
+		{
 			return; //zero-hex move, probably used by attack subclass
-
+		}
+		else
+		{
+			//Nothing to do.
+		}
 		// Debug movement points
 		if ( !lg::debug.dont_log(log_whiteboard) )
 		{
@@ -394,7 +467,10 @@ namespace wb {
 						<< "] should get changed from " << unit->movement_left() << " to "
 						<< unit->movement_left() + movement_cost_ << ".\n";
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		// Restore the unit to its original position and movement.
 		mover_.reset();
 	}
@@ -408,6 +484,10 @@ namespace wb {
 			turn_text << turn_number_;
 			resources::screen->draw_text_in_hex(hex, display::LAYER_MOVE_INFO, turn_text.str(), 17, font::NORMAL_COLOR, 0.5,0.8);
 		}
+		else
+		{
+			//Nothing to do.
+		}
 	}
 
 	void move::do_hide()
@@ -417,6 +497,10 @@ namespace wb {
 		{		
 			fake_unit_->set_hidden(true);
 		}	
+		else
+		{
+			//Nothing to do.
+		}
 	}
 
 	void move::do_show()
@@ -426,6 +510,10 @@ namespace wb {
 		{
 			fake_unit_->set_hidden(false);
 		}	
+		else
+		{
+			//Nothing to do.
+		}
 	}
 
 	void move::hide_fake_unit()
@@ -435,6 +523,10 @@ namespace wb {
 		{		
 			fake_unit_->set_hidden(true);
 		}	
+		else
+		{
+			//Nothing to do.
+		}
 	}
 
 	void move::show_fake_unit()
@@ -443,6 +535,10 @@ namespace wb {
 		if(!hidden())
 		{
 			fake_unit_->set_hidden(false);
+		}
+		else
+		{
+			//Nothing to do.
 		}
 	}
 
@@ -467,6 +563,10 @@ namespace wb {
 				{
 					target->set_arrow_texture(setting_texture);
 				}
+				else
+				{
+					//Nothing to do.
+				}
 			}
 
 			void set_texture(move::ARROW_TEXTURE texture) 
@@ -485,7 +585,10 @@ namespace wb {
 		{
 			return INVALID_LOCATION;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		//Check that the unit still exists in the source hex
 		unit_map::iterator unit_it;
 		unit_it = resources::units->find(get_source_hex());
@@ -493,20 +596,29 @@ namespace wb {
 		{
 			return NO_UNIT;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		//check if the unit in the source hex has the same unit id as before,
 		//i.e. that it's the same unit
 		if(unit_id_ != unit_it->id() || unit_underlying_id_ != unit_it->underlying_id())
 		{
 			return UNIT_CHANGED;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		//If the path has at least two hexes (it can have less with the attack subclass), ensure destination hex is free
 		if(get_route().steps.size() >= 2 && resources::gameboard->get_visible_unit(get_dest_hex(),resources::teams->at(viewer_team())) != NULL)
 		{
 			return LOCATION_OCCUPIED;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		//check that the path is good
 		if(get_source_hex() != get_dest_hex()) 
 		{ //skip zero-hex move used by attack subclass
@@ -518,8 +630,15 @@ namespace wb {
 			{
 				return TOO_FAR;
 			}
+			else
+			{
+				//Nothing to do.
+			}
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		// The move is valid, so correct the setter.
 		setter.set_texture(ARROW_TEXTURE_VALID);
 
@@ -603,7 +722,10 @@ namespace wb {
 			arrow_->set_style(arrow::STYLE_FOCUS_INVALID);
 			return;
 		}
-
+		else
+		{
+			//Nothing to do.
+		}
 		switch(arrow_brightness_)
 		{
 		case ARROW_BRIGHTNESS_STANDARD:
