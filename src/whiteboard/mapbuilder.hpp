@@ -30,51 +30,56 @@ struct unit_movement_resetter;
 
 struct temporary_unit_remover;
 
-namespace wb
-{
-
-/**
- * Class that collects and applies unit_map modifications from the actions it visits
- * and reverts all changes on destruction.
- */
-class mapbuilder
-{
-
-public:
-	mapbuilder(unit_map& unit_map);
-	virtual ~mapbuilder();
+namespace wb {
 
 	/**
-	 * Builds every team's actions as far into the future as possible, in the correct order.
+	 * Class that collects and applies unit_map modifications from the actions it visits
+	 * and reverts all changes on destruction.
 	 */
-	void build_map();
+	class mapbuilder {
 
-private:
-	/** Function called on each action. */
-	void process(side_actions &sa, side_actions::iterator action_it);
+		public:
+			
+			mapbuilder(unit_map& unit_map);
+			
+			virtual ~mapbuilder();
 
-	/** Function called after visiting a team. */
-	void post_visit_team(size_t turn);
+			/**
+			 * Builds every team's actions as far into the future as possible, in the correct order.
+			 */
+			void build_map();
 
-	/** Does various preliminary actions on the unit map such as resetting moves for some units. */
-	void pre_build();
+		private:
+			
+			/** Function called on each action. */
+			void process(side_actions &sa, side_actions::iterator action_it);
 
-	void restore_normal_map();
+			/** Function called after visiting a team. */
+			void post_visit_team(size_t turn);
 
-	unit_map& unit_map_;
+			/** Does various preliminary actions on the unit map such as resetting moves for some units. */
+			void pre_build();
 
-	action_queue applied_actions_;
-	action_queue applied_actions_this_turn_;
+			void restore_normal_map();
 
-	//Used by pre_build()
-	boost::ptr_vector<unit_movement_resetter> resetters_;
-	boost::ptr_vector<temporary_unit_remover> removers_;
+			unit_map& unit_map_;
 
-	//Used by process()
-	std::set<unit const*> acted_this_turn_;
-	std::set<unit const*> has_invalid_actions_;
-	std::list<side_actions::iterator> invalid_actions_; ///< Conserved invalid actions.
-};
+			action_queue applied_actions_;
+			
+			action_queue applied_actions_this_turn_;
+
+			//Used by pre_build()
+			boost::ptr_vector<unit_movement_resetter> resetters_;
+			
+			boost::ptr_vector<temporary_unit_remover> removers_;
+
+			//Used by process()
+			std::set<unit const*> acted_this_turn_;
+			
+			std::set<unit const*> has_invalid_actions_;
+			
+			std::list<side_actions::iterator> invalid_actions_; ///< Conserved invalid actions.
+	};
 
 }
 
