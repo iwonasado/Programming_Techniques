@@ -39,16 +39,19 @@
 namespace wb 
 {
 
+	// returns the index of the viewing team
 	size_t viewer_team ()
 	{
 		return resources::screen -> viewing_team ();
 	}
 
+	// viewing side number
 	int viewer_side ()
 	{
 		return resources::screen -> viewing_side ();
 	}
 
+	// actions that belong to the viewing team
 	side_actions_ptr viewer_actions ()
 	{
 		side_actions_ptr side_actions =
@@ -56,6 +59,7 @@ namespace wb
 		return side_actions;
 	}
 
+	// side actions to the current playing team
 	side_actions_ptr current_side_actions ()
 	{
 		side_actions_ptr side_actions =
@@ -63,6 +67,7 @@ namespace wb
 		return side_actions;
 	}
 
+	// find backup leader in the same castle
 	unit_const_ptr find_backup_leader (const unit & leader)
 	{
 		assert (leader.can_recruit ());
@@ -78,9 +83,11 @@ namespace wb
 		return unit_const_ptr ();
 	}
 
+	// find the leader who can recruit
 	unit* find_recruiter (size_t team_index, map_location const& hex)
 	{
-		if (!resources::gameboard -> map ().is_castle (hex)) {
+		if (!resources::gameboard -> map ().is_castle (hex)) 
+        {
 			return NULL;
 		}
 
@@ -92,6 +99,7 @@ namespace wb
 		return NULL;
 	}
 
+	// return a pointer to the visible unit
 	unit* future_visible_unit (map_location hex, int viewer_side)
 	{
 		future_map planned_unit_map;
@@ -104,33 +112,44 @@ namespace wb
 		return resources::gameboard -> get_visible_unit (hex, resources::teams -> at (viewer_side - 1), false);
 	}
 
+	/*
+	* return a pointer to the visible unit
+	* on_side only search units of the specified side
+	*/
 	unit* future_visible_unit (int on_side, map_location hex, int viewer_side)
 	{
 		unit* unit = future_visible_unit(hex, viewer_side);
-		if (unit && unit->side() == on_side) {
+		if (unit && unit->side() == on_side) 
+		{
 			return unit;
-		}
-		else {
+		} else 
+		  {
 			return NULL;
-		}
+		  }
 	}
 
+	// return the cost on MP of the travelling distance
 	int path_cost (std::vector<map_location> const& path, unit const& u)
 	{
-		if (path.size() < 2) {
+		if (path.size() < 2) 
+		{
 			return 0;
 		}
+		
 		team const& u_team = resources::teams -> at (u.side ()-1);
 		map_location const& dest = path.back ();
 		if ((resources::gameboard -> map ().is_village (dest) && !u_team.owns_village (dest))
-	     || pathfind::enemy_zoc (u_team, dest, u_team)) {
+	     || pathfind::enemy_zoc (u_team, dest, u_team)) 
+		{
 			return u.total_movement();
 		}
 
 		int result = 0;
+		
 		gamemap const& map = resources::gameboard -> map ();
 		BOOST_FOREACH (map_location const& loc, std::make_pair (path.begin () + 1,path.end ()))
 		result += u.movement_cost (map[loc]);
+		
 		return result;
 	}
 
@@ -147,32 +166,38 @@ namespace wb
 		} catch (...) {}
 	}
 
+	// set ghost type of animation to an unit
 	void ghost_owner_unit (unit* unit)
 	{
 		unit -> anim_comp ().set_disabled_ghosted (false);
 		resources::screen -> invalidate (unit -> get_location ());
 	}
 
+	// unset ghost type of animation to an unit
 	void unghost_owner_unit (unit* unit)
 	{
 		unit -> anim_comp ().set_standing (true);
 		resources::screen -> invalidate (unit -> get_location ());
 	}
 
+	// returns whether the whiteboard has actions
 	bool has_actions ()
 	{
 		BOOST_FOREACH (team& t, *resources::teams)
-		if (!t.get_side_actions () -> empty ()) {
+		if (!t.get_side_actions () -> empty ()) 
+		{
 			return true;
 		}
 		return false;
 	}
 
+	// returns whether the team plan is visible
 	bool team_has_visible_plan (team &t)
 	{
 		return !t.get_side_actions () -> hidden ();
 	}
 
+	// if this returns false, the actions of this team won't be processed
 	void for_each_action (boost::function<void (action_ptr)> function, team_filter team_filter)
 	{
 		bool end = false;
@@ -191,6 +216,7 @@ namespace wb
 		}
 	}
 
+	// finds the action occuring on the given parameter
 	action_ptr find_action_at (map_location hex, team_filter team_filter)
 	{
 		action_ptr result;
@@ -202,7 +228,8 @@ namespace wb
 			if (team_filter (side)) 
 			{
 				side_actions::iterator chall = actions.find_first_action_at (hex);
-				if (chall == actions.end ()) {
+				if (chall == actions.end ()) 
+				{
 					continue;
 				}
 				
@@ -217,6 +244,7 @@ namespace wb
 		return result;
 	}
 
+	// find actions of an unit
 	std::deque<action_ptr> find_actions_of (unit const &target)
 	{
 		return (*resources::teams)[target.side ()-1].get_side_actions () -> actions_of (target);
