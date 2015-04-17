@@ -169,6 +169,7 @@ namespace {
 		  false, scope_editor, "" },
 		{ hotkey::HOTKEY_EDITOR_MAP_INFO, "editor-map-info", N_("Map Information"), false, scope_editor, "" },
 
+		// clear selected items, set items swap, scrolls and groups
 		{ hotkey::HOTKEY_EDITOR_PALETTE_ITEMS_CLEAR, "editor-palette-items-clear", 
 		  N_("Clear Selected Item Set"), false, scope_editor, "" },
 		{ hotkey::HOTKEY_EDITOR_PALETTE_ITEM_SWAP, "editor-terrain-palette-swap", 
@@ -180,6 +181,7 @@ namespace {
 		{ hotkey::HOTKEY_EDITOR_PALETTE_DOWNSCROLL, "editor-palette-downscroll", N_("Scroll Palette Right"), 
 		  false, scope_editor, "" },
 
+		// set hotkey actions for tools
 		{ hotkey::HOTKEY_EDITOR_SIDE_NEW, "editor-side-new", N_("Add New Side"), false, scope_editor, "" },
 
 		{ hotkey::HOTKEY_EDITOR_TOOL_NEXT, "editor-tool-next", N_("Next Tool"), false, scope_editor, "" },
@@ -203,6 +205,7 @@ namespace {
 		{ hotkey::HOTKEY_EDITOR_TOOL_VILLAGE, "editor-tool-village", N_("Village Tool"), 
 		  false, scope_editor, N_("Left mouse button sets the village ownership to the current side, right clears. Needs a defined side.") },
 
+		// setup booleans that enebles actions
 		{ hotkey::HOTKEY_EDITOR_UNIT_TOGGLE_CANRECRUIT, "editor-toggle-canrecruit", N_("Can Recruit"), 
 		  false, scope_editor, N_("Toggle the recruit attribute of a unit.") },
 		{ hotkey::HOTKEY_EDITOR_UNIT_TOGGLE_RENAMEABLE, "editor-toggle-renameable", N_("Can be Renamed"), 
@@ -221,6 +224,7 @@ namespace {
 		{ hotkey::HOTKEY_MINIMAP_CODING_TERRAIN, "minimap-terrain-coding", N_("Toggle Minimap Terrain Coding"), 
 		  false, scope_game | scope_editor | scope_main, "" },
 
+		// draw units, villages and terrain to the screen, draw functions based on triggers by player
 		{ hotkey::HOTKEY_MINIMAP_DRAW_UNITS, "minimap-draw-units", N_("Toggle Minimap Unit Drawing"), 
 		  false, scope_game | scope_editor | scope_main, "" },
 		{ hotkey::HOTKEY_MINIMAP_DRAW_VILLAGES, "minimap-draw-villages", 
@@ -228,6 +232,7 @@ namespace {
 		{ hotkey::HOTKEY_MINIMAP_DRAW_TERRAIN, "minimap-draw-terrain", 
 		  N_("Toggle Minimap Terrain Drawing"), false, scope_game | scope_editor | scope_main, "" },
 
+		// setup brush tools
 		{ hotkey::HOTKEY_EDITOR_BRUSH_NEXT, "editor-brush-next", N_("Next Brush"), false, scope_editor, "" },
 		{ hotkey::HOTKEY_EDITOR_BRUSH_DEFAULT, "editor-brush-default", 
 		  N_("Default Brush"), false, scope_editor, "" },
@@ -237,6 +242,7 @@ namespace {
 		{ hotkey::HOTKEY_EDITOR_BRUSH_NW_SE, "editor-brush-nw-se", N_("Brush NW-SE"), false, scope_editor, "" },
 		{ hotkey::HOTKEY_EDITOR_BRUSH_SW_NE, "editor-brush-sw-ne", N_("Brush SW-NE"), false, scope_editor, "" },
 
+		// setup copy and selection related functions
 		{ hotkey::HOTKEY_EDITOR_SELECTION_CUT, "editor-cut", N_("Cut"), false, scope_editor, "" },
 		{ hotkey::HOTKEY_EDITOR_SELECTION_COPY, "editor-copy", N_("Copy"), false, scope_editor, "" },	
 		{ hotkey::HOTKEY_EDITOR_CLIPBOARD_PASTE, "editor-paste", N_("Paste"), false, scope_editor, 
@@ -247,6 +253,8 @@ namespace {
 		{ hotkey::HOTKEY_EDITOR_SELECT_INVERSE, "editor-select-inverse", 
 		  N_("Select Inverse"), false, scope_editor, "" },
 		{ hotkey::HOTKEY_EDITOR_SELECT_NONE, "editor-select-none", N_("Select None"), false, scope_editor, "" },
+
+		// clipboard view related functions
 		{ hotkey::HOTKEY_EDITOR_CLIPBOARD_ROTATE_CW, "editor-clipboard-rotate-cw", 
 		  N_("Rotate Clipboard Clockwise"), false, scope_editor, "" },
 		{ hotkey::HOTKEY_EDITOR_CLIPBOARD_ROTATE_CCW, "editor-clipboard-rotate-ccw", 
@@ -265,6 +273,8 @@ namespace {
 		  N_("Generate Tiles in Selection"), false, scope_editor, "" },
 		{ hotkey::HOTKEY_EDITOR_SELECTION_RANDOMIZE, "editor-selection-randomize", 
 		  N_("Randomize Tiles in Selection"), false, scope_editor, "" },
+
+		// map possible editors
 		{ hotkey::HOTKEY_EDITOR_MAP_RESIZE, "editor-map-resize", N_("Resize Map"), false, scope_editor, "" },
 		{ hotkey::HOTKEY_EDITOR_MAP_ROTATE, "editor-map-rotate", N_("Rotate Map"), false, scope_editor, "" },
 		{ hotkey::HOTKEY_EDITOR_MAP_GENERATE, "editor-map-generate", 
@@ -296,6 +306,7 @@ namespace {
 		{ hotkey::HOTKEY_EDITOR_DRAW_TERRAIN_CODES, "editor-draw-terrain-codes", 
 		  N_("Draw Terrain Codes"), false, scope_editor, "" },
 
+		// set static functions to selected area
 		{ hotkey::HOTKEY_EDITOR_AREA_SAVE,   "editor-save-area",   
 		  N_("Save Selection to Area"), false, scope_editor, "" },
 		{ hotkey::HOTKEY_EDITOR_AREA_RENAME, "editor-rename-area", 
@@ -325,6 +336,7 @@ namespace {
 		{ hotkey::HOTKEY_AI_FORMULA, "aiformula", N_("Run Formula"), false, scope_game, "" },
 		{ hotkey::HOTKEY_CLEAR_MSG, "clearmessages", N_("Clear Messages"), false, scope_game, "" },
 
+		// changes in screen display options, including it's language
 		{ hotkey::HOTKEY_LANGUAGE, "changelanguage", N_("Change Language"), false, scope_main, "" },
 		{ hotkey::TITLE_SCREEN__RELOAD_WML, "title_screen__reload_wml", 
 		  N_("Refresh WML"), true , scope_editor | scope_main, "" },
@@ -343,6 +355,7 @@ namespace {
 		{ hotkey::TITLE_SCREEN__EDITOR, "title_screen__editor", N_("Start Editor"), false, scope_main, "" },
 		{ hotkey::TITLE_SCREEN__CREDITS, "title_screen__credits", N_("Show Credits"), false	, scope_main, "" },
 
+		// help and tips
 		{ hotkey::GLOBAL__HELPTIP, "global__helptip", N_("Show Helptip"), 
 		  false, scope_game | scope_editor | scope_main, "" },	
 
@@ -406,7 +419,7 @@ namespace hotkey {
 		return s.any();
 	}
 
-
+	// get event keys pressed or return null
 	const hotkey_command& get_hotkey_command(const std::string& command) {
 
 		if (command_map_.find(command) == command_map_.end())
@@ -421,13 +434,14 @@ namespace hotkey {
 		return known_hotkeys[command_map_[command]];
 	}
 
+	// pointer vector to known hotkeys, this will keep the event trigger keys, the known keys. 
 	const boost::ptr_vector<hotkey_command>& get_hotkey_commands() {
 
 		return known_hotkeys;
 	}
 
 
-	// Returns whether a hotkey was deleted.
+	// Returns whether a hotkey was deleted. Event related
 	bool remove_wml_hotkey(const std::string& id) {
 
 		const hotkey::hotkey_command& command = get_hotkey_command(id);
@@ -471,11 +485,13 @@ namespace hotkey {
 		}
 	}	
 
+	// this will say wether the event that happened on the keyboard exists or not
 	bool has_hotkey_command(const std::string& id) {
 
 		return get_hotkey_command(id).id != hotkey::HOTKEY_NULL;
 	}
 
+	// will add the hotkey
 	void add_wml_hotkey(const std::string& id, const t_string& description, const config& default_hotkey) {
 
 		if(id == "null")
@@ -528,7 +544,8 @@ namespace hotkey {
 	hotkey_command::hotkey_command()
 		: id(HOTKEY_NULL), command(""), description(""), hidden(true), scope(), tooltip("") {
 
-			ERR_G << "hotkey_command's default constructor called. This shouldn't happen, because all its members are const.";
+			ERR_G << "hotkey_command's default constructor called. 
+					  This shouldn't happen, because all its members are const.";
 		}
 
 	hotkey_command::hotkey_command(hotkey::HOTKEY_COMMAND cmd, const std::string& id_, const t_string& desc, 
@@ -544,6 +561,7 @@ namespace hotkey {
 		return get_hotkey_null();
 	}
 
+	//checks wether the hotkey command is null
 	bool hotkey_command::null() const {
 
 		if(id == HOTKEY_NULL || command == "null")
@@ -557,7 +575,9 @@ namespace hotkey {
 			}
 			else
 			{
-				ERR_G << "the hotkey command seems to be the null command but it is not 100% sure. This shouldn't happen";
+				ERR_G << "the hotkey command seems to be the null 
+						  command but it is not 100% sure.
+				 		  This shouldn't happen";
 				
 				return true;
 			}
@@ -597,6 +617,7 @@ namespace hotkey {
 		return known_hotkeys[sizeof(hotkey_list_) / sizeof(hotkey_list_[0])  - 1];
 	}
 
+	// delete all wml hotkeys
 	void delete_all_wml_hotkeys() {
 
 		while(known_hotkeys.back().id == hotkey::HOTKEY_WML)
@@ -610,11 +631,13 @@ namespace hotkey {
 		}
 	}
 
+	// says what does the hotkey
 	const std::string& get_description(const std::string& command) {
 
 		return get_hotkey_command(command).description;
 	}
 
+	// get tool tip for the hotkey
 	const std::string& get_tooltip(const std::string& command) {
 
 		// the null hotkey_command has the "" tooltip
@@ -637,6 +660,7 @@ namespace hotkey {
 		}
 	}
 
+	// clear unnecessary hotkey commands
 	void clear_hotkey_commands() {
 	
 		command_map_.clear();
