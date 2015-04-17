@@ -23,24 +23,25 @@
 
 #include "typedefs.hpp"
 
-namespace wb
-{
+namespace wb {
 
-/**
- * Abstract base class for all the visitors (cf GoF Visitor Design Pattern) the whiteboard uses.
- */
-class visitor
-{
-public:
-	virtual void visit(move_ptr move) = 0;
-	virtual void visit(attack_ptr attack) = 0;
-	virtual void visit(recruit_ptr recruit) = 0;
-	virtual void visit(recall_ptr recall) = 0;
-	virtual void visit(suppose_dead_ptr sup_d) = 0;
+	/**
+	 * Abstract base class for all the visitors (cf GoF Visitor Design Pattern) the whiteboard uses.
+	 */
+	class visitor {
+	
+	public:
+	
+		virtual void visit(move_ptr move) = 0;
+		virtual void visit(attack_ptr attack) = 0;
+		virtual void visit(recruit_ptr recruit) = 0;
+		virtual void visit(recall_ptr recall) = 0;
+		virtual void visit(suppose_dead_ptr sup_d) = 0;
 
-protected:
-	virtual ~visitor() {}
-};
+	protected:
+	
+		virtual ~visitor() {}
+	};
 
 }
 
